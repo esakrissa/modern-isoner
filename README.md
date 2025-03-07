@@ -13,7 +13,7 @@ Modern implementation of ISONER (Information System on Internet Messenger) frame
 - Containerized with Docker and orchestrated with Kubernetes
 - Infrastructure as Code with Terraform
 
-## 🧬 Architecture
+## ⚡ Architecture
 
 This project implements a microservices architecture for a chatbot system with the following components:
 
@@ -253,6 +253,6 @@ modern-isoner/
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request
 
-## ⚖️ License
+## 📄 License
 
 This project is licensed under the Apache License 2.0. - visit: https://www.apache.org/licenses/LICENSE-2.0 for details.
