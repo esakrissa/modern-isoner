@@ -78,17 +78,6 @@ flowchart TD
     
     RS --> PS
     PS --> TB
-    
-    classDef primary fill:#4285F4,stroke:#0D47A1,color:white
-    classDef secondary fill:#34A853,stroke:#0D652D,color:white
-    classDef storage fill:#FBBC05,stroke:#866A00,color:white
-    classDef external fill:#EA4335,stroke:#8A1C1C,color:white
-    classDef ui fill:#673AB7,stroke:#320B86,color:white
-    
-    class TB,AD ui
-    class AG,AS,MS,NLP,EDS,RS primary
-    class SB,PS,RC storage
-    class OAI,RAPI external
 ```
 
 ## Technologies
