@@ -213,7 +213,9 @@ flowchart TB
 
     %% Link Styling
     linkStyle default stroke:#000000,stroke-width:2px
-```## Technologies
+```
+
+## Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
 - **Database**: Supabase (PostgreSQL)
@@ -345,5 +347,3 @@ modern-isoner/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-
