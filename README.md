@@ -33,16 +33,18 @@ flowchart TD
     subgraph mainBg [" "]
         style mainBg fill:#FFFFFF,stroke:#000000
         
+        %% Title box dengan spasi tambahan untuk memperpanjang kotak
+        title["M/___________________________________MODERN_ISONER_ARCHITECTURE_________________________________M/"]
+        style title fill:#FFFFFF,stroke:#000000    
+        
         %% Main components
         telegramBot["Telegram Bot (User Interface)"]
         adminDashboard["Admin Dashboard (Optional)"]
         
-        %% API Gateway group
+        %% API Gateway group - horizontal layout
         subgraph apiGatewayGroup["API GATEWAY"]
-            rateLimiter["Rate Limiter"]
-            routing["Routing"]
-            logging["Logging"]
-            monitoring["Monitoring"]
+            direction LR
+            rateLimiter["Rate Limiter"] --- routing["Routing"] --- logging["Logging"] --- monitoring["Monitoring"]
         end
         
         %% Auth Service group
@@ -90,6 +92,10 @@ flowchart TD
             messageHandling["Message Handling"]
             mediaProcessing["Media Processing"]
         end
+        
+        %% Positioning
+        title ~~~ telegramBot
+        title ~~~ adminDashboard
         
         %% Connections
         telegramBot --> apiGatewayGroup
