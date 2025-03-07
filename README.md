@@ -35,8 +35,6 @@ This project implements Role-Based Access Control (RBAC) for secure access manag
 - **Permissions**: Granular permissions for specific actions
 - **Row Level Security**: Database-level security policies in Supabase
 
-For detailed information about the RBAC implementation, see [README-RBAC.md](README-RBAC.md).
-
 ## Development Setup
 
 ### Prerequisites
