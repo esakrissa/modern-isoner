@@ -42,31 +42,61 @@ This project implements a microservices architecture for a chatbot system with t
 flowchart TB
     subgraph MainContainer[" "]
         %% User Interface Layer
-        User([User]) --> TB[Telegram Bot]
-        Admin([Admin]) --> AD[Dashboard]
+        subgraph UI[User Interface Layer]
+            TB[Telegram Bot]
+            AD[Admin Dashboard]
+        end
         
         %% Gateway Layer
-        TB --> AG{API Gateway}
-        AD --> AG
+        subgraph GW[API Gateway Layer]
+            AG[API Gateway]
+            RL[Rate Limiter]
+            RO[Router]
+            LG[Logger]
+        end
         
         %% Service Layer
-        AG -->|Auth| AS[Auth Service]
-        AG -->|Message| MS[Message Service]
+        subgraph SVC[Service Layer]
+            AS[Auth Service]
+            MS[Message Service]
+            NLP[NLP Service]
+            EDS[External Data Service]
+            RS[Response Service]
+        end
         
         %% Storage Layer
-        AS --> SB[(Supabase DB)]
+        subgraph ST[Storage Layer]
+            SB[Supabase DB]
+            PS[GCP Pub/Sub]
+            RC[Redis Cache]
+        end
+        
+        %% External Layer
+        subgraph EXT[External Layer]
+            OAI[OpenAI API]
+            RAPI[RapidAPI]
+        end
+        
+        %% Connections
+        User --> TB
+        Admin --> AD
+        
+        TB --> AG
+        AD --> AG
+        
+        AG --> AS & MS
+        
+        AS --> SB
         MS --> SB
-        MS --> PS[GCP Pub/Sub]
+        MS --> PS
         
-        %% Processing Layer
-        PS --> NLP{NLP Service}
-        NLP -->|Process| OAI[OpenAI API]
-        NLP -->|Cache| RC[(Redis)]
-        NLP -->|Data| EDS[External Data]
-        EDS --> RAPI[RapidAPI]
+        PS --> NLP
+        NLP --> OAI
+        NLP --> RC
+        NLP --> EDS
+        EDS --> RAPI
         
-        %% Response Layer
-        NLP --> RS[Response Service]
+        NLP --> RS
         RS --> PS
         PS --> TB
         TB --> User
@@ -74,21 +104,31 @@ flowchart TB
 
     %% Styling
     style MainContainer fill:#ffffff,stroke:#ffffff,stroke-width:4px
-    style User fill:#ffffff,stroke:#000000
-    style Admin fill:#ffffff,stroke:#000000
-    style TB fill:#ffffff,stroke:#000000
-    style AD fill:#ffffff,stroke:#000000
-    style AG fill:#ffffff,stroke:#000000
-    style AS fill:#ffffff,stroke:#000000
-    style MS fill:#ffffff,stroke:#000000
-    style NLP fill:#ffffff,stroke:#000000
-    style EDS fill:#ffffff,stroke:#000000
-    style RS fill:#ffffff,stroke:#000000
-    style SB fill:#ffffff,stroke:#000000
-    style PS fill:#ffffff,stroke:#000000
-    style RC fill:#ffffff,stroke:#000000
-    style OAI fill:#ffffff,stroke:#000000
-    style RAPI fill:#ffffff,stroke:#000000
+    style UI fill:#ffffff,stroke:#000000,stroke-width:2px
+    style GW fill:#ffffff,stroke:#000000,stroke-width:2px
+    style SVC fill:#ffffff,stroke:#000000,stroke-width:2px
+    style ST fill:#ffffff,stroke:#000000,stroke-width:2px
+    style EXT fill:#ffffff,stroke:#000000,stroke-width:2px
+    
+    %% Node Styling
+    style User fill:#ffffff,stroke:#000000,stroke-width:2px
+    style Admin fill:#ffffff,stroke:#000000,stroke-width:2px
+    style TB fill:#ffffff,stroke:#000000,stroke-width:2px
+    style AD fill:#ffffff,stroke:#000000,stroke-width:2px
+    style AG fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RL fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RO fill:#ffffff,stroke:#000000,stroke-width:2px
+    style LG fill:#ffffff,stroke:#000000,stroke-width:2px
+    style AS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style MS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style NLP fill:#ffffff,stroke:#000000,stroke-width:2px
+    style EDS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style SB fill:#ffffff,stroke:#000000,stroke-width:2px
+    style PS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RC fill:#ffffff,stroke:#000000,stroke-width:2px
+    style OAI fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RAPI fill:#ffffff,stroke:#000000,stroke-width:2px
 
     %% Link Styling
     linkStyle default stroke:#000000,stroke-width:2px
