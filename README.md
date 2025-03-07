@@ -124,7 +124,7 @@ flowchart TD
     class apiGatewayGroup,authServiceGroup,messageServiceGroup,nlpServiceGroup,externalDataServiceGroup,redisCacheGroup,responseServiceGroup,telegramBotImplGroup groupStyle
 ```
 
-## 🛠️ Technologies
+## 💻 Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
 - **Database**: Supabase (PostgreSQL)
@@ -245,7 +245,7 @@ modern-isoner/
 └── .github/workflows/  # CI/CD pipelines
 ```
 
-## 🤝 Contributing
+## 🔄 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
