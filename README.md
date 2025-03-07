@@ -24,6 +24,73 @@ This project implements a microservices architecture for a chatbot system with t
 - **External Data Service**: Fetches data from external APIs (e.g., hotel information)
 - **Response Service**: Generates and formats responses to users
 
+### System Flow Diagram
+
+```mermaid
+flowchart TD
+    subgraph "User Interfaces"
+        TB[Telegram Bot]
+        AD[Admin Dashboard\n(Optional)]
+    end
+
+    subgraph "API Layer"
+        AG[API Gateway]
+    end
+
+    subgraph "Core Services"
+        AS[Auth Service]
+        MS[Message Service]
+        NLP[NLP Service]
+        EDS[External Data Service]
+        RS[Response Service]
+    end
+
+    subgraph "Data Storage & Messaging"
+        SB[(Supabase DB)]
+        PS[GCP Pub/Sub]
+        RC[(Redis Cache)]
+    end
+
+    subgraph "External Services"
+        OAI[OpenAI API]
+        RAPI[RapidAPI\n(Booking.com)]
+    end
+
+    TB --> AG
+    AD --> AG
+    
+    AG --> AS
+    AG --> MS
+    
+    AS --> SB
+    MS --> SB
+    MS --> PS
+    
+    PS --> NLP
+    NLP --> OAI
+    NLP --> RC
+    
+    NLP --> EDS
+    NLP --> RS
+    
+    EDS --> RAPI
+    EDS --> RC
+    
+    RS --> PS
+    PS --> TB
+    
+    classDef primary fill:#4285F4,stroke:#0D47A1,color:white
+    classDef secondary fill:#34A853,stroke:#0D652D,color:white
+    classDef storage fill:#FBBC05,stroke:#866A00,color:white
+    classDef external fill:#EA4335,stroke:#8A1C1C,color:white
+    classDef ui fill:#673AB7,stroke:#320B86,color:white
+    
+    class TB,AD ui
+    class AG,AS,MS,NLP,EDS,RS primary
+    class SB,PS,RC storage
+    class OAI,RAPI external
+```
+
 ## Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
