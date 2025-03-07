@@ -43,63 +43,175 @@ flowchart TB
     subgraph MainContainer[" "]
         %% User Interface Layer
         subgraph UI[User Interface Layer]
-            TB[Telegram Bot]
-            AD[Admin Dashboard]
+            subgraph TB[Telegram Bot]
+                subgraph TBH[Message Handler]
+                    TBH[Message Handler]
+                end
+                subgraph TBM[Media Processor]
+                    TBM[Media Processor]
+                end
+            end
+            subgraph AD[Admin Dashboard]
+                subgraph ADM[Monitoring]
+                    ADM[Monitoring]
+                end
+                subgraph ADS[Statistics]
+                    ADS[Statistics]
+                end
+            end
         end
         
         %% Gateway Layer
         subgraph GW[API Gateway Layer]
-            AG[API Gateway]
-            RL[Rate Limiter]
-            RO[Router]
-            LG[Logger]
+            subgraph AG[API Gateway]
+                RL[Rate Limiter]
+                RO[Router]
+                LG[Logger]
+                subgraph MO[Monitoring]
+                    MO[Monitoring]
+                end
+            end
         end
         
         %% Service Layer
         subgraph SVC[Service Layer]
-            AS[Auth Service]
-            MS[Message Service]
-            NLP[NLP Service]
-            EDS[External Data Service]
-            RS[Response Service]
+            subgraph AS[Auth Service]
+                subgraph JWT[JWT Authentication]
+                    JWT[JWT Authentication]
+                end
+                subgraph RBAC[Role-Based Access]
+                    RBAC[Role-Based Access]
+                end
+                subgraph PM[Permission Manager]
+                    PM[Permission Manager]
+                end
+            end
+            
+            subgraph MS[Message Service]
+                subgraph MP[Message Processor]
+                    MP[Message Processor]
+                end
+                subgraph CM[Conversation Manager]
+                    CM[Conversation Manager]
+                end
+                subgraph MQ[Message Queue]
+                    MQ[Message Queue]
+                end
+            end
+            
+            subgraph NLP[NLP Service]
+                subgraph IR[Intent Recognition]
+                    IR[Intent Recognition]
+                end
+                subgraph EE[Entity Extraction]
+                    EE[Entity Extraction]
+                end
+                subgraph CA[Context Analyzer]
+                    CA[Context Analyzer]
+                end
+            end
+            
+            subgraph EDS[External Data Service]
+                subgraph RAC[RapidAPI Client]
+                    RAC[RapidAPI Client]
+                end
+                subgraph DF[Data Formatter]
+                    DF[Data Formatter]
+                end
+                subgraph CH[Cache Handler]
+                    CH[Cache Handler]
+                end
+            end
+            
+            subgraph RS[Response Service]
+                subgraph RT[Response Templates]
+                    RT[Response Templates]
+                end
+                subgraph FC[Format Converter]
+                    FC[Format Converter]
+                end
+                subgraph RG[Response Generator]
+                    RG[Response Generator]
+                end
+            end
         end
         
         %% Storage Layer
         subgraph ST[Storage Layer]
-            SB[Supabase DB]
-            PS[GCP Pub/Sub]
-            RC[Redis Cache]
+            subgraph SB[Supabase DB]
+                subgraph AUTH[Auth Data]
+                    AUTH[Auth Data]
+                end
+                subgraph CONV[Conversations]
+                    CONV[Conversations]
+                end
+                subgraph PERM[Permissions]
+                    PERM[Permissions]
+                end
+            end
+            subgraph PS[GCP Pub/Sub]
+                subgraph PUB[Publisher]
+                    PUB[Publisher]
+                end
+                subgraph SUB[Subscriber]
+                    SUB[Subscriber]
+                end
+            end
+            subgraph RC[Redis Cache]
+                subgraph SESS[Session Data]
+                    SESS[Session Data]
+                end
+                subgraph RESP[Response Cache]
+                    RESP[Response Cache]
+                end
+            end
         end
         
         %% External Layer
         subgraph EXT[External Layer]
-            OAI[OpenAI API]
-            RAPI[RapidAPI]
+            subgraph OAI[OpenAI API]
+                subgraph GPT[GPT Model]
+                    GPT[GPT Model]
+                end
+                subgraph EMB[Embeddings]
+                    EMB[Embeddings]
+                end
+            end
+            subgraph RAPI[RapidAPI]
+                subgraph HOT[Hotels API]
+                    HOT[Hotels API]
+                end
+                subgraph BOOK[Booking.com]
+                    BOOK[Booking.com]
+                end
+            end
         end
         
         %% Connections
-        User --> TB
-        Admin --> AD
+        User --> TBH
+        Admin --> ADM
         
-        TB --> AG
-        AD --> AG
+        TBH --> RO
+        ADM --> RO
         
-        AG --> AS & MS
+        RO --> JWT
+        RO --> MP
         
-        AS --> SB
-        MS --> SB
-        MS --> PS
+        JWT --> AUTH
+        RBAC --> PERM
+        MP --> CONV
+        MP --> PUB
         
-        PS --> NLP
-        NLP --> OAI
-        NLP --> RC
-        NLP --> EDS
-        EDS --> RAPI
+        SUB --> IR
+        IR --> GPT
+        IR --> SESS
+        IR --> RAC
+        RAC --> HOT
         
-        NLP --> RS
-        RS --> PS
-        PS --> TB
-        TB --> User
+        IR --> RT
+        RT --> PUB
+        SUB --> TBH
+        TBH --> User
     end
 
     %% Styling
@@ -110,15 +222,10 @@ flowchart TB
     style ST fill:#ffffff,stroke:#000000,stroke-width:2px
     style EXT fill:#ffffff,stroke:#000000,stroke-width:2px
     
-    %% Node Styling
-    style User fill:#ffffff,stroke:#000000,stroke-width:2px
-    style Admin fill:#ffffff,stroke:#000000,stroke-width:2px
+    %% Node Styling - Main Components
     style TB fill:#ffffff,stroke:#000000,stroke-width:2px
     style AD fill:#ffffff,stroke:#000000,stroke-width:2px
     style AG fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RL fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RO fill:#ffffff,stroke:#000000,stroke-width:2px
-    style LG fill:#ffffff,stroke:#000000,stroke-width:2px
     style AS fill:#ffffff,stroke:#000000,stroke-width:2px
     style MS fill:#ffffff,stroke:#000000,stroke-width:2px
     style NLP fill:#ffffff,stroke:#000000,stroke-width:2px
@@ -129,6 +236,42 @@ flowchart TB
     style RC fill:#ffffff,stroke:#000000,stroke-width:2px
     style OAI fill:#ffffff,stroke:#000000,stroke-width:2px
     style RAPI fill:#ffffff,stroke:#000000,stroke-width:2px
+
+    %% Node Styling - Internal Components
+    style TBH fill:#ffffff,stroke:#000000,stroke-width:2px
+    style TBM fill:#ffffff,stroke:#000000,stroke-width:2px
+    style ADM fill:#ffffff,stroke:#000000,stroke-width:2px
+    style ADS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RL fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RO fill:#ffffff,stroke:#000000,stroke-width:2px
+    style LG fill:#ffffff,stroke:#000000,stroke-width:2px
+    style MO fill:#ffffff,stroke:#000000,stroke-width:2px
+    style JWT fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RBAC fill:#ffffff,stroke:#000000,stroke-width:2px
+    style PM fill:#ffffff,stroke:#000000,stroke-width:2px
+    style MP fill:#ffffff,stroke:#000000,stroke-width:2px
+    style CM fill:#ffffff,stroke:#000000,stroke-width:2px
+    style MQ fill:#ffffff,stroke:#000000,stroke-width:2px
+    style IR fill:#ffffff,stroke:#000000,stroke-width:2px
+    style EE fill:#ffffff,stroke:#000000,stroke-width:2px
+    style CA fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RAC fill:#ffffff,stroke:#000000,stroke-width:2px
+    style DF fill:#ffffff,stroke:#000000,stroke-width:2px
+    style CH fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RT fill:#ffffff,stroke:#000000,stroke-width:2px
+    style FC fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RG fill:#ffffff,stroke:#000000,stroke-width:2px
+    style AUTH fill:#ffffff,stroke:#000000,stroke-width:2px
+    style CONV fill:#ffffff,stroke:#000000,stroke-width:2px
+    style PERM fill:#ffffff,stroke:#000000,stroke-width:2px
+    style PUB fill:#ffffff,stroke:#000000,stroke-width:2px
+    style SUB fill:#ffffff,stroke:#000000,stroke-width:2px
+    style SESS fill:#ffffff,stroke:#000000,stroke-width:2px
+    style RESP fill:#ffffff,stroke:#000000,stroke-width:2px
+    style GPT fill:#ffffff,stroke:#000000,stroke-width:2px
+    style EMB fill:#ffffff,stroke:#000000,stroke-width:2px
+    style HOT fill:#ffffff,stroke:#000000,stroke-width:2px
+    style BOOK fill:#ffffff,stroke:#000000,stroke-width:2px
 
     %% Link Styling
     linkStyle default stroke:#000000,stroke-width:2px
