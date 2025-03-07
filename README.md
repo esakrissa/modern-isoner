@@ -29,31 +29,31 @@ This project implements a microservices architecture for a chatbot system with t
 ```mermaid
 flowchart TD
     subgraph "User Interfaces"
-        TB[Telegram Bot]
-        AD[Admin Dashboard\n(Optional)]
+        TB["Telegram Bot"]
+        AD["Admin Dashboard (Optional)"]
     end
 
     subgraph "API Layer"
-        AG[API Gateway]
+        AG["API Gateway"]
     end
 
     subgraph "Core Services"
-        AS[Auth Service]
-        MS[Message Service]
-        NLP[NLP Service]
-        EDS[External Data Service]
-        RS[Response Service]
+        AS["Auth Service"]
+        MS["Message Service"]
+        NLP["NLP Service"]
+        EDS["External Data Service"]
+        RS["Response Service"]
     end
 
     subgraph "Data Storage & Messaging"
         SB[(Supabase DB)]
-        PS[GCP Pub/Sub]
+        PS["GCP Pub/Sub"]
         RC[(Redis Cache)]
     end
 
     subgraph "External Services"
-        OAI[OpenAI API]
-        RAPI[RapidAPI\n(Booking.com)]
+        OAI["OpenAI API"]
+        RAPI["RapidAPI (Booking.com)"]
     end
 
     TB --> AG
