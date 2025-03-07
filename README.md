@@ -1,6 +1,6 @@
 # Modern ISONER
 
-Modern ISONER: A reimagined implementation of the ISONER (Information System on Internet Messenger) framework using modern technologies and microservices architecture.
+Modern implementation of ISONER (Information System on Internet Messenger) framework using microservices architecture. This project modernizes the original ISONER concept with Python, FastAPI, Supabase, Redis, and GCP Pub/Sub, providing a scalable and efficient chatbot system accessible through Telegram.
 
 Key features:
 - Microservices architecture with Python and FastAPI
