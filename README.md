@@ -27,7 +27,8 @@ This project implements a microservices architecture for a chatbot system with t
 ### System Flow Diagram
 
 ```mermaid
-graph TD
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff' }}}%%
+flowchart TB
     subgraph "User Interfaces"
         TB["Telegram Bot"]
         AD["Admin Dashboard (Optional)"]
@@ -56,30 +57,28 @@ graph TD
         RAPI["RapidAPI (Booking.com)"]
     end
 
-    TB --- AG
-    AD --- AG
+    TB --> AG
+    AD --> AG
     
-    AG --- AS
-    AG --- MS
+    AG --> AS & MS
     
-    AS --- SB
-    MS --- SB
-    MS --- PS
+    AS --> SB
+    MS --> SB
+    MS --> PS
     
-    PS --- NLP
-    NLP --- OAI
-    NLP --- RC
+    PS --> NLP
+    NLP --> OAI
+    NLP --> RC
     
-    NLP --- EDS
-    NLP --- RS
+    NLP --> EDS & RS
     
-    EDS --- RAPI
-    EDS --- RC
+    EDS --> RAPI
+    EDS --> RC
     
-    RS --- PS
-    PS --- TB
+    RS --> PS
+    PS --> TB
 
-    linkStyle default stroke-width:1px,fill:none,stroke:black;
+    linkStyle default stroke:#000000,stroke-width:1px;
 ```
 
 ## Technologies
