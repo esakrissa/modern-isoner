@@ -37,135 +37,55 @@ This project implements a microservices architecture for a chatbot system with t
     'secondaryColor': '#ffffff', 
     'tertiaryColor': '#ffffff',
     'background': '#ffffff'
-  },
-  'flowchart': {
-    'htmlLabels': true,
-    'curve': 'basis',
-    'diagramPadding': 40,
-    'useMaxWidth': false
   }
 }}%%
 flowchart TB
-    %% Create a background container for the entire diagram
-    subgraph BG [" "]
-        %% Define nodes with proper spacing
-        subgraph UI["User Interfaces"]
-            TB["Telegram Bot"]
-            AD["Admin Dashboard<br/>(Optional)"]
-        end
-        
-        subgraph API["API Layer"]
-            AG["API Gateway"]
-        end
-        
-        subgraph CS["Core Services"]
-            AS["Auth<br/>Service"]
-            MS["Message<br/>Service"]
-            NLP["NLP<br/>Service"]
-            EDS["External Data<br/>Service"]
-            RS["Response<br/>Service"]
-        end
-        
-        subgraph DS["Data Storage & Messaging"]
-            SB[(Supabase DB)]
-            PS["GCP Pub/Sub"]
-            RC[(Redis Cache)]
-        end
-        
-        subgraph ES["External Services"]
-            OAI["OpenAI API"]
-            RAPI["RapidAPI<br/>(Booking.com)"]
-        end
-        
-        %% Define connections with proper spacing
-        TB -->|"Request"| AG
-        AD -->|"Admin<br/>Request"| AG
-        
-        AG -->|"Auth<br/>Request"| AS
-        AG -->|"Message<br/>Request"| MS
-        
-        AS -->|"Store/Query"| SB
-        MS -->|"Store/Query"| SB
-        MS -->|"Publish"| PS
-        
-        PS -->|"Subscribe"| NLP
-        NLP -->|"Process"| OAI
-        NLP -->|"Cache"| RC
-        
-        NLP -->|"Request<br/>Data"| EDS
-        NLP -->|"Generate<br/>Response"| RS
-        
-        EDS -->|"Fetch"| RAPI
-        EDS -->|"Cache"| RC
-        
-        RS -->|"Publish"| PS
-        PS -->|"Subscribe"| TB
-    end
+    %% User Interface Layer
+    User([User]) --> TB[Telegram Bot]
+    Admin([Admin]) --> AD[Dashboard]
     
-    %% Style all links and nodes
-    linkStyle default stroke:#000000,stroke-width:1.5px;
+    %% Gateway Layer
+    TB --> AG{API Gateway}
+    AD --> AG
     
-    style BG fill:#ffffff,stroke:#ffffff,stroke-width:0px;
-    style UI fill:#ffffff,stroke:#000000,stroke-width:1px;
-    style API fill:#ffffff,stroke:#000000,stroke-width:1px;
-    style CS fill:#ffffff,stroke:#000000,stroke-width:1px;
-    style DS fill:#ffffff,stroke:#000000,stroke-width:1px;
-    style ES fill:#ffffff,stroke:#000000,stroke-width:1px;
-```
+    %% Service Layer
+    AG -->|Auth| AS[Auth Service]
+    AG -->|Message| MS[Message Service]
+    
+    %% Storage Layer
+    AS --> SB[(Supabase DB)]
+    MS --> SB
+    MS --> PS[GCP Pub/Sub]
+    
+    %% Processing Layer
+    PS --> NLP{NLP Service}
+    NLP -->|Process| OAI[OpenAI API]
+    NLP -->|Cache| RC[(Redis)]
+    NLP -->|Data| EDS[External Data]
+    EDS --> RAPI[RapidAPI]
+    
+    %% Response Layer
+    NLP --> RS[Response Service]
+    RS --> PS
+    PS --> TB
+    TB --> User
 
-### Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant TB as Telegram Bot
-    participant AG as API Gateway
-    participant AS as Auth Service
-    participant MS as Message Service
-    participant NLP as NLP Service
-    participant EDS as External Data Service
-    participant RS as Response Service
-    participant SB as Supabase
-    participant PS as Pub/Sub
-    participant RC as Redis Cache
-    participant OAI as OpenAI API
-    participant RAPI as RapidAPI
-
-    User->>TB: Send message
-    TB->>AG: Forward request
-    AG->>AS: Authenticate user
-    AS->>SB: Verify credentials
-    SB-->>AS: User verified
-    AS-->>AG: Auth success
-
-    AG->>MS: Process message
-    MS->>SB: Store message
-    MS->>PS: Publish message
-    PS-->>NLP: Subscribe & process
-
-    par NLP Processing
-        NLP->>OAI: Process text
-        OAI-->>NLP: Intent & entities
-        NLP->>RC: Cache results
-    and External Data
-        NLP->>EDS: Request data
-        EDS->>RAPI: Fetch hotel info
-        EDS->>RC: Cache response
-        RAPI-->>EDS: Hotel data
-        EDS-->>NLP: Processed data
-    end
-
-    NLP->>RS: Generate response
-    RS->>PS: Publish response
-    PS-->>TB: Subscribe & receive
-    TB->>User: Send response
-
-    loop Cache Management
-        RC->>RC: Expire old data
-    end
-
-    Note over NLP,RS: All services use Redis<br/>for caching responses
-    Note over MS,PS: Pub/Sub ensures<br/>asynchronous communication
+    %% Styling
+    style User fill:#ffffff,stroke:#000000
+    style Admin fill:#ffffff,stroke:#000000
+    style TB fill:#ffffff,stroke:#000000
+    style AD fill:#ffffff,stroke:#000000
+    style AG fill:#ffffff,stroke:#000000
+    style AS fill:#ffffff,stroke:#000000
+    style MS fill:#ffffff,stroke:#000000
+    style NLP fill:#ffffff,stroke:#000000
+    style EDS fill:#ffffff,stroke:#000000
+    style RS fill:#ffffff,stroke:#000000
+    style SB fill:#ffffff,stroke:#000000
+    style PS fill:#ffffff,stroke:#000000
+    style RC fill:#ffffff,stroke:#000000
+    style OAI fill:#ffffff,stroke:#000000
+    style RAPI fill:#ffffff,stroke:#000000
 ```
 
 ## Technologies
