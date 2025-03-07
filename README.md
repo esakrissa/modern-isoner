@@ -41,10 +41,10 @@ flowchart TD
         telegramBot["Telegram Bot (User Interface)"]
         adminDashboard["Admin Dashboard (Optional)"]
         
-        %% API Gateway group - horizontal layout
+        %% API Gateway group - horizontal layout tanpa panah
         subgraph apiGatewayGroup["API GATEWAY"]
             direction LR
-            rateLimiter["Rate Limiter"] --- routing["Routing"] --- logging["Logging"] --- monitoring["Monitoring"]
+            rateLimiter["Rate Limiter"] ~~~ routing["Routing"] ~~~ logging["Logging"] ~~~ monitoring["Monitoring"]
         end
         
         %% Auth Service group
