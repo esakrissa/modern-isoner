@@ -13,7 +13,7 @@ Modern implementation of ISONER (Information System on Internet Messenger) frame
 - Containerized with Docker and orchestrated with Kubernetes
 - Infrastructure as Code with Terraform
 
-## 🌐 Architecture
+## 🎵 Architecture
 
 This project implements a microservices architecture for a chatbot system with the following components:
 
