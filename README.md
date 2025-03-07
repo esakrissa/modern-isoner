@@ -1,17 +1,17 @@
-# 🤖 Modern ISONER
+# Modern ISONER
 
 Modern implementation of ISONER (Information System on Internet Messenger) framework using microservices architecture. This project modernizes the original ISONER concept with Python, FastAPI, Supabase, Redis, and GCP Pub/Sub, providing a scalable and efficient chatbot system accessible through Telegram.
 
 Key features:
 - 🏗️ Microservices architecture with Python and FastAPI
-- 🗄️ Supabase (PostgreSQL) for database
-- 📨 GCP Pub/Sub for message broker
-- ⚡ Redis for caching
-- 🧠 OpenAI integration for advanced NLP
+- Supabase (PostgreSQL) for database
+- GCP Pub/Sub for message broker
+- Redis for caching
+- 🤖 OpenAI integration for advanced NLP
 - 💬 Telegram Bot interface
-- 🔑 Role-Based Access Control (RBAC)
+- Role-Based Access Control (RBAC)
 - 🐳 Containerized with Docker and orchestrated with Kubernetes
-- ⚙️ Infrastructure as Code with Terraform
+- Infrastructure as Code with Terraform
 
 ## 📐 Architecture
 
