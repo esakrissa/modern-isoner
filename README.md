@@ -1,6 +1,17 @@
-# ISONER Modern Chatbot
+# Modern ISONER
 
-Modern implementation of ISONER (Information System on Internet Messenger) framework using microservices architecture. This project modernizes the original ISONER concept with Python, FastAPI, Supabase, Redis, and GCP Pub/Sub, providing a scalable and efficient chatbot system accessible through Telegram.
+Modern ISONER: A reimagined implementation of the ISONER (Information System on Internet Messenger) framework using modern technologies and microservices architecture.
+
+Key features:
+- Microservices architecture with Python and FastAPI
+- Supabase (PostgreSQL) for database
+- GCP Pub/Sub for message broker
+- Redis for caching
+- OpenAI integration for advanced NLP
+- Telegram Bot interface
+- Role-Based Access Control (RBAC)
+- Containerized with Docker and orchestrated with Kubernetes
+- Infrastructure as Code with Terraform
 
 ## Architecture
 
@@ -39,13 +50,14 @@ This project implements Role-Based Access Control (RBAC) for secure access manag
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.11+
 - Docker and Docker Compose
 - Google Cloud SDK
 - Supabase account
 - Redis instance (local or cloud)
 - OpenAI API key
 - RapidAPI key
+- Telegram Bot token
 
 ### Environment Variables
 
@@ -71,6 +83,9 @@ RAPIDAPI_KEY=your_rapidapi_key
 
 # JWT
 JWT_SECRET=your_jwt_secret_key
+
+# Telegram
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 ```
 
 ### Database Setup
@@ -114,7 +129,7 @@ gcloud services enable pubsub.googleapis.com run.googleapis.com artifactregistry
 ## Project Structure
 
 ```
-isoner-chatbot/
+modern-isoner/
 ├── api_gateway/         # API Gateway service
 ├── auth_service/        # Authentication service
 ├── message_service/     # Message handling service
@@ -123,11 +138,11 @@ isoner-chatbot/
 ├── response_service/    # Response generation service
 ├── telegram_bot/        # Telegram Bot interface
 ├── middleware/          # Shared middleware components
-├── routes/              # API route definitions
-├── terraform/           # Infrastructure as code
-├── scripts/             # Utility scripts
-├── sql/                 # SQL scripts
-└── .github/workflows/   # CI/CD pipelines
+├── routes/             # API route definitions
+├── terraform/          # Infrastructure as code
+├── scripts/            # Utility scripts
+├── sql/               # SQL scripts
+└── .github/workflows/  # CI/CD pipelines
 ```
 
 ## Contributing
