@@ -27,192 +27,95 @@ This project implements a microservices architecture for a chatbot system with t
 ### System Flow Diagram
 
 ```mermaid
-%%{init: {
-  'theme': 'base', 
-  'themeVariables': { 
-    'primaryColor': '#ffffff', 
-    'primaryTextColor': '#000000', 
-    'primaryBorderColor': '#000000', 
-    'lineColor': '#000000', 
-    'secondaryColor': '#ffffff', 
-    'tertiaryColor': '#ffffff',
-    'background': '#ffffff'
-  }
-}}%%
-flowchart TB
-    subgraph MainContainer[" "]
-        %% User Interface Layer
-        subgraph UI[User Interface Layer]
-            subgraph TB[Telegram Bot]
-                TBH[Message Handler]
-                TBM[Media Processor]
-            end
-            subgraph AD[Admin Dashboard]
-                ADM[Monitoring]
-                ADS[Statistics]
-            end
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#FFFFFF', 'primaryBorderColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#FFFFFF', 'tertiaryColor': '#FFFFFF', 'background': '#FFFFFF' }}}%%
+
+flowchart TD
+    subgraph mainBg [" "]
+        style mainBg fill:#FFFFFF,stroke:#000000
+        
+        %% Main components
+        telegramBot["Telegram Bot (User Interface)"]
+        adminDashboard["Admin Dashboard (Optional)"]
+        
+        %% API Gateway group
+        subgraph apiGatewayGroup["API GATEWAY"]
+            rateLimiter["Rate Limiter"]
+            routing["Routing"]
+            logging["Logging"]
+            monitoring["Monitoring"]
         end
         
-        %% Gateway Layer
-        subgraph GW[API Gateway Layer]
-            subgraph AG[API Gateway]
-                RL[Rate Limiter]
-                RO[Router]
-                LG[Logger]
-                MO[Monitoring]
-            end
+        %% Auth Service group
+        subgraph authServiceGroup["Auth Service"]
+            jwtAuth["JWT Authentication"]
+            rbac["RBAC"]
         end
         
-        %% Service Layer
-        subgraph SVC[Service Layer]
-            subgraph AS[Auth Service]
-                JWT[JWT Authentication]
-                RBAC[Role-Based Access]
-                PM[Permission Manager]
-            end
-            
-            subgraph MS[Message Service]
-                MP[Message Processor]
-                CM[Conversation Manager]
-                MQ[Message Queue]
-            end
-            
-            subgraph NLP[NLP Service]
-                IR[Intent Recognition]
-                EE[Entity Extraction]
-                CA[Context Analyzer]
-            end
-            
-            subgraph EDS[External Data Service]
-                RAC[RapidAPI Client]
-                DF[Data Formatter]
-                CH[Cache Handler]
-            end
-            
-            subgraph RS[Response Service]
-                RT[Response Templates]
-                FC[Format Converter]
-                RG[Response Generator]
-            end
+        %% Message Service group
+        subgraph messageServiceGroup["Message Service"]
+            messageProcessing["Message Processing"]
+            conversationMgmt["Conversation Mgmt"]
         end
         
-        %% Storage Layer
-        subgraph ST[Storage Layer]
-            subgraph SB[Supabase DB]
-                AUTH[Auth Data]
-                CONV[Conversations]
-                PERM[Permissions]
-            end
-            subgraph PS[GCP Pub/Sub]
-                PUB[Publisher]
-                SUB[Subscriber]
-            end
-            subgraph RC[Redis Cache]
-                SESS[Session Data]
-                RESP[Response Cache]
-            end
+        %% Database and Message Broker
+        supabase["Supabase (PostgreSQL Database)"]
+        gcpPubSub["GCP Pub/Sub (Message Broker)"]
+        
+        %% NLP Service group
+        subgraph nlpServiceGroup["NLP Service"]
+            intentRecognition["Intent Recognition"]
+            entityExtraction["Entity Extraction"]
         end
         
-        %% External Layer
-        subgraph EXT[External Layer]
-            subgraph OAI[OpenAI API]
-                GPT[GPT Model]
-                EMB[Embeddings]
-            end
-            subgraph RAPI[RapidAPI]
-                HOT[Hotels API]
-                BOOK[Booking.com API]
-            end
+        %% External Data Service group
+        subgraph externalDataServiceGroup["External Data Service"]
+            rapidAPIClient["RapidAPI Client"]
+            dataFormatting["Data Formatting"]
+        end
+        
+        %% Redis Cache group
+        subgraph redisCacheGroup["Redis Cache"]
+            responseCache["Response Cache"]
+            sessionStorage["Session Storage"]
+        end
+        
+        %% Response Service group
+        subgraph responseServiceGroup["Response Service"]
+            responseTemplates["Response Templates"]
+            formatConversion["Format Conversion"]
+        end
+        
+        %% Telegram Bot Implementation group
+        subgraph telegramBotImplGroup["Telegram Bot"]
+            messageHandling["Message Handling"]
+            mediaProcessing["Media Processing"]
         end
         
         %% Connections
-        User --> TBH
-        Admin --> ADM
+        telegramBot --> apiGatewayGroup
+        adminDashboard --> apiGatewayGroup
         
-        TBH --> RO
-        ADM --> RO
+        apiGatewayGroup --> authServiceGroup
+        apiGatewayGroup --> messageServiceGroup
         
-        RO --> JWT
-        RO --> MP
+        authServiceGroup --> supabase
+        messageServiceGroup --> gcpPubSub
         
-        JWT --> AUTH
-        RBAC --> PERM
-        MP --> CONV
-        MP --> PUB
+        gcpPubSub --> nlpServiceGroup
         
-        SUB --> IR
-        IR --> GPT
-        IR --> SESS
-        IR --> RAC
-        RAC --> HOT
+        nlpServiceGroup --> externalDataServiceGroup
+        nlpServiceGroup --> redisCacheGroup
         
-        IR --> RT
-        RT --> PUB
-        SUB --> TBH
-        TBH --> User
+        externalDataServiceGroup --> responseServiceGroup
+        
+        responseServiceGroup --> telegramBotImplGroup
     end
 
     %% Styling
-    style MainContainer fill:#ffffff,stroke:#ffffff,stroke-width:4px
-    style UI fill:#ffffff,stroke:#000000,stroke-width:2px
-    style GW fill:#ffffff,stroke:#000000,stroke-width:2px
-    style SVC fill:#ffffff,stroke:#000000,stroke-width:2px
-    style ST fill:#ffffff,stroke:#000000,stroke-width:2px
-    style EXT fill:#ffffff,stroke:#000000,stroke-width:2px
+    classDef default fill:#FFFFFF,stroke:#000000,color:#000000
+    classDef groupStyle fill:#FFFFFF,stroke:#000000,color:#000000
     
-    %% Node Styling - Main Components
-    style TB fill:#ffffff,stroke:#000000,stroke-width:2px
-    style AD fill:#ffffff,stroke:#000000,stroke-width:2px
-    style AG fill:#ffffff,stroke:#000000,stroke-width:2px
-    style AS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style MS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style NLP fill:#ffffff,stroke:#000000,stroke-width:2px
-    style EDS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style SB fill:#ffffff,stroke:#000000,stroke-width:2px
-    style PS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RC fill:#ffffff,stroke:#000000,stroke-width:2px
-    style OAI fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RAPI fill:#ffffff,stroke:#000000,stroke-width:2px
-
-    %% Node Styling - Internal Components
-    style TBH fill:#ffffff,stroke:#000000,stroke-width:2px
-    style TBM fill:#ffffff,stroke:#000000,stroke-width:2px
-    style ADM fill:#ffffff,stroke:#000000,stroke-width:2px
-    style ADS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RL fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RO fill:#ffffff,stroke:#000000,stroke-width:2px
-    style LG fill:#ffffff,stroke:#000000,stroke-width:2px
-    style MO fill:#ffffff,stroke:#000000,stroke-width:2px
-    style JWT fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RBAC fill:#ffffff,stroke:#000000,stroke-width:2px
-    style PM fill:#ffffff,stroke:#000000,stroke-width:2px
-    style MP fill:#ffffff,stroke:#000000,stroke-width:2px
-    style CM fill:#ffffff,stroke:#000000,stroke-width:2px
-    style MQ fill:#ffffff,stroke:#000000,stroke-width:2px
-    style IR fill:#ffffff,stroke:#000000,stroke-width:2px
-    style EE fill:#ffffff,stroke:#000000,stroke-width:2px
-    style CA fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RAC fill:#ffffff,stroke:#000000,stroke-width:2px
-    style DF fill:#ffffff,stroke:#000000,stroke-width:2px
-    style CH fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RT fill:#ffffff,stroke:#000000,stroke-width:2px
-    style FC fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RG fill:#ffffff,stroke:#000000,stroke-width:2px
-    style AUTH fill:#ffffff,stroke:#000000,stroke-width:2px
-    style CONV fill:#ffffff,stroke:#000000,stroke-width:2px
-    style PERM fill:#ffffff,stroke:#000000,stroke-width:2px
-    style PUB fill:#ffffff,stroke:#000000,stroke-width:2px
-    style SUB fill:#ffffff,stroke:#000000,stroke-width:2px
-    style SESS fill:#ffffff,stroke:#000000,stroke-width:2px
-    style RESP fill:#ffffff,stroke:#000000,stroke-width:2px
-    style GPT fill:#ffffff,stroke:#000000,stroke-width:2px
-    style EMB fill:#ffffff,stroke:#000000,stroke-width:2px
-    style HOT fill:#ffffff,stroke:#000000,stroke-width:2px
-    style BOOK fill:#ffffff,stroke:#000000,stroke-width:2px
-
-    %% Link Styling
-    linkStyle default stroke:#000000,stroke-width:2px
+    class apiGatewayGroup,authServiceGroup,messageServiceGroup,nlpServiceGroup,externalDataServiceGroup,redisCacheGroup,responseServiceGroup,telegramBotImplGroup groupStyle
 ```
 
 ## Technologies
