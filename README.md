@@ -1,19 +1,19 @@
-# Modern ISONER
+# 🤖 Modern ISONER
 
 Modern implementation of ISONER (Information System on Internet Messenger) framework using microservices architecture. This project modernizes the original ISONER concept with Python, FastAPI, Supabase, Redis, and GCP Pub/Sub, providing a scalable and efficient chatbot system accessible through Telegram.
 
 Key features:
-- Microservices architecture with Python and FastAPI
-- Supabase (PostgreSQL) for database
-- GCP Pub/Sub for message broker
-- Redis for caching
-- OpenAI integration for advanced NLP
-- Telegram Bot interface
-- Role-Based Access Control (RBAC)
-- Containerized with Docker and orchestrated with Kubernetes
-- Infrastructure as Code with Terraform
+- 🏗️ Microservices architecture with Python and FastAPI
+- 🗄️ Supabase (PostgreSQL) for database
+- 📨 GCP Pub/Sub for message broker
+- ⚡ Redis for caching
+- 🧠 OpenAI integration for advanced NLP
+- 💬 Telegram Bot interface
+- 🔑 Role-Based Access Control (RBAC)
+- 🐳 Containerized with Docker and orchestrated with Kubernetes
+- ⚙️ Infrastructure as Code with Terraform
 
-## Architecture
+## 📐 Architecture
 
 This project implements a microservices architecture for a chatbot system with the following components:
 
@@ -124,7 +124,7 @@ flowchart TD
     class apiGatewayGroup,authServiceGroup,messageServiceGroup,nlpServiceGroup,externalDataServiceGroup,redisCacheGroup,responseServiceGroup,telegramBotImplGroup groupStyle
 ```
 
-## Technologies
+## 🛠️ Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
 - **Database**: Supabase (PostgreSQL)
@@ -136,7 +136,7 @@ flowchart TD
 - **Infrastructure as Code**: Terraform
 - **CI/CD**: GitHub Actions
 
-## Security & Access Control
+## 🔐 Security & Access Control
 
 This project implements Role-Based Access Control (RBAC) for secure access management:
 
@@ -146,7 +146,7 @@ This project implements Role-Based Access Control (RBAC) for secure access manag
 - **Permissions**: Granular permissions for specific actions
 - **Row Level Security**: Database-level security policies in Supabase
 
-## Development Setup
+## 🚀 Development Setup
 
 ### Prerequisites
 
@@ -226,7 +226,7 @@ gcloud services enable pubsub.googleapis.com run.googleapis.com artifactregistry
 ./scripts/deploy.sh your-gcp-project-id us-central1
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 modern-isoner/
@@ -245,7 +245,7 @@ modern-isoner/
 └── .github/workflows/  # CI/CD pipelines
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -253,6 +253,6 @@ modern-isoner/
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request
 
-## License
+## ⚖️ License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License 2.0. - visit: https://www.apache.org/licenses/LICENSE-2.0 for details.
