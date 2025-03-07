@@ -1,6 +1,6 @@
 # ISONER Modern Chatbot
 
-A modern chatbot system built with Python, FastAPI, and GCP Pub/Sub, based on the ISONER framework.
+Modern implementation of ISONER (Information System on Internet Messenger) framework using microservices architecture. This project modernizes the original ISONER concept with Python, FastAPI, Supabase, Redis, and GCP Pub/Sub, providing a scalable and efficient chatbot system accessible through Telegram.
 
 ## Architecture
 
@@ -121,6 +121,7 @@ isoner-chatbot/
 ├── nlp_service/         # Natural Language Processing service
 ├── external_data_service/ # External data fetching service
 ├── response_service/    # Response generation service
+├── telegram_bot/        # Telegram Bot interface
 ├── middleware/          # Shared middleware components
 ├── routes/              # API route definitions
 ├── terraform/           # Infrastructure as code
