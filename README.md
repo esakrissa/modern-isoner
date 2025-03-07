@@ -126,59 +126,28 @@ flowchart TB
         end
         
         %% Connections
-        %% User Interface to Gateway
         User --> TBH
-        TBM --> TBH
         Admin --> ADM
-        TBH --> RL
-        RL --> RO
+        
+        TBH --> RO
         ADM --> RO
         
-        %% Gateway to Services
         RO --> JWT
         RO --> MP
-        LG --> MO
         
-        %% Auth Service Connections
-        JWT --> RBAC
-        RBAC --> PM
         JWT --> AUTH
         RBAC --> PERM
-        PM --> PERM
+        MP --> CONV
+        MP --> PUB
         
-        %% Message Service Connections
-        MP --> CM
-        CM --> CONV
-        MP --> MQ
-        MQ --> PUB
-        
-        %% Message Flow to NLP
-        PUB --> SUB
         SUB --> IR
-        
-        %% NLP Service Connections
-        IR --> EE
-        EE --> CA
         IR --> GPT
-        IR --> EMB
-        CA --> SESS
-        
-        %% External Data Service Connections
+        IR --> SESS
         IR --> RAC
         RAC --> HOT
-        RAC --> BOOK
-        HOT --> DF
-        BOOK --> DF
-        DF --> CH
-        CH --> RESP
         
-        %% Response Service Connections
-        CA --> RT
-        RT --> FC
-        FC --> RG
-        RG --> PUB
-        
-        %% Completing the Loop
+        IR --> RT
+        RT --> PUB
         SUB --> TBH
         TBH --> User
     end
@@ -244,8 +213,7 @@ flowchart TB
 
     %% Link Styling
     linkStyle default stroke:#000000,stroke-width:2px
-```
-## Technologies
+```## Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
 - **Database**: Supabase (PostgreSQL)
@@ -377,4 +345,5 @@ modern-isoner/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
 
