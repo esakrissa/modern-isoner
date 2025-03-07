@@ -31,7 +31,7 @@ This project implements a microservices architecture for a chatbot system with t
 - **Message Broker**: Google Cloud Pub/Sub
 - **Caching**: Redis
 - **NLP**: OpenAI GPT API
-- **External Data**: RapidAPI (Hotels API)
+- **External Data**: RapidAPI (Hotels API from Booking.com)
 - **Deployment**: Google Cloud Run
 - **Infrastructure as Code**: Terraform
 - **CI/CD**: GitHub Actions
