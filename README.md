@@ -44,20 +44,12 @@ flowchart TB
         %% User Interface Layer
         subgraph UI[User Interface Layer]
             subgraph TB[Telegram Bot]
-                subgraph TBH[Message Handler]
-                    TBH[Message Handler]
-                end
-                subgraph TBM[Media Processor]
-                    TBM[Media Processor]
-                end
+                TBH[Message Handler]
+                TBM[Media Processor]
             end
             subgraph AD[Admin Dashboard]
-                subgraph ADM[Monitoring]
-                    ADM[Monitoring]
-                end
-                subgraph ADS[Statistics]
-                    ADS[Statistics]
-                end
+                ADM[Monitoring]
+                ADS[Statistics]
             end
         end
         
@@ -67,123 +59,69 @@ flowchart TB
                 RL[Rate Limiter]
                 RO[Router]
                 LG[Logger]
-                subgraph MO[Monitoring]
-                    MO[Monitoring]
-                end
+                MO[Monitoring]
             end
         end
         
         %% Service Layer
         subgraph SVC[Service Layer]
             subgraph AS[Auth Service]
-                subgraph JWT[JWT Authentication]
-                    JWT[JWT Authentication]
-                end
-                subgraph RBAC[Role-Based Access]
-                    RBAC[Role-Based Access]
-                end
-                subgraph PM[Permission Manager]
-                    PM[Permission Manager]
-                end
+                JWT[JWT Authentication]
+                RBAC[Role-Based Access]
+                PM[Permission Manager]
             end
             
             subgraph MS[Message Service]
-                subgraph MP[Message Processor]
-                    MP[Message Processor]
-                end
-                subgraph CM[Conversation Manager]
-                    CM[Conversation Manager]
-                end
-                subgraph MQ[Message Queue]
-                    MQ[Message Queue]
-                end
+                MP[Message Processor]
+                CM[Conversation Manager]
+                MQ[Message Queue]
             end
             
             subgraph NLP[NLP Service]
-                subgraph IR[Intent Recognition]
-                    IR[Intent Recognition]
-                end
-                subgraph EE[Entity Extraction]
-                    EE[Entity Extraction]
-                end
-                subgraph CA[Context Analyzer]
-                    CA[Context Analyzer]
-                end
+                IR[Intent Recognition]
+                EE[Entity Extraction]
+                CA[Context Analyzer]
             end
             
             subgraph EDS[External Data Service]
-                subgraph RAC[RapidAPI Client]
-                    RAC[RapidAPI Client]
-                end
-                subgraph DF[Data Formatter]
-                    DF[Data Formatter]
-                end
-                subgraph CH[Cache Handler]
-                    CH[Cache Handler]
-                end
+                RAC[RapidAPI Client]
+                DF[Data Formatter]
+                CH[Cache Handler]
             end
             
             subgraph RS[Response Service]
-                subgraph RT[Response Templates]
-                    RT[Response Templates]
-                end
-                subgraph FC[Format Converter]
-                    FC[Format Converter]
-                end
-                subgraph RG[Response Generator]
-                    RG[Response Generator]
-                end
+                RT[Response Templates]
+                FC[Format Converter]
+                RG[Response Generator]
             end
         end
         
         %% Storage Layer
         subgraph ST[Storage Layer]
             subgraph SB[Supabase DB]
-                subgraph AUTH[Auth Data]
-                    AUTH[Auth Data]
-                end
-                subgraph CONV[Conversations]
-                    CONV[Conversations]
-                end
-                subgraph PERM[Permissions]
-                    PERM[Permissions]
-                end
+                AUTH[Auth Data]
+                CONV[Conversations]
+                PERM[Permissions]
             end
             subgraph PS[GCP Pub/Sub]
-                subgraph PUB[Publisher]
-                    PUB[Publisher]
-                end
-                subgraph SUB[Subscriber]
-                    SUB[Subscriber]
-                end
+                PUB[Publisher]
+                SUB[Subscriber]
             end
             subgraph RC[Redis Cache]
-                subgraph SESS[Session Data]
-                    SESS[Session Data]
-                end
-                subgraph RESP[Response Cache]
-                    RESP[Response Cache]
-                end
+                SESS[Session Data]
+                RESP[Response Cache]
             end
         end
         
         %% External Layer
         subgraph EXT[External Layer]
             subgraph OAI[OpenAI API]
-                subgraph GPT[GPT Model]
-                    GPT[GPT Model]
-                end
-                subgraph EMB[Embeddings]
-                    EMB[Embeddings]
-                end
+                GPT[GPT Model]
+                EMB[Embeddings]
             end
             subgraph RAPI[RapidAPI]
-                subgraph HOT[Hotels API]
-                    HOT[Hotels API]
-                end
-                subgraph BOOK[Booking.com]
-                    BOOK[Booking.com]
-                end
+                HOT[Hotels API]
+                BOOK[Booking.com API]
             end
         end
         
@@ -276,136 +214,3 @@ flowchart TB
     %% Link Styling
     linkStyle default stroke:#000000,stroke-width:2px
 ```
-
-## Technologies
-
-- **Backend**: Python 3.11+ with FastAPI
-- **Database**: Supabase (PostgreSQL)
-- **Message Broker**: Google Cloud Pub/Sub
-- **Caching**: Redis
-- **NLP**: OpenAI GPT API
-- **External Data**: RapidAPI (Hotels API from Booking.com)
-- **Deployment**: Google Cloud Run
-- **Infrastructure as Code**: Terraform
-- **CI/CD**: GitHub Actions
-
-## Security & Access Control
-
-This project implements Role-Based Access Control (RBAC) for secure access management:
-
-- **Authentication**: JWT-based authentication via Supabase Auth
-- **Authorization**: Custom middleware for permission and role checks
-- **Roles**: Pre-defined roles (admin, manager, user) with different access levels
-- **Permissions**: Granular permissions for specific actions
-- **Row Level Security**: Database-level security policies in Supabase
-
-## Development Setup
-
-### Prerequisites
-
-- Python 3.11+
-- Docker and Docker Compose
-- Google Cloud SDK
-- Supabase account
-- Redis instance (local or cloud)
-- OpenAI API key
-- RapidAPI key
-- Telegram Bot token
-
-### Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```
-# Supabase
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
-
-# GCP
-GCP_PROJECT_ID=your_gcp_project_id
-GOOGLE_APPLICATION_CREDENTIALS=path/to/your/credentials.json
-
-# Redis
-REDIS_HOST=your_redis_host
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
-
-# API Keys
-OPENAI_API_KEY=your_openai_api_key
-RAPIDAPI_KEY=your_rapidapi_key
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-
-# Telegram
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-```
-
-### Database Setup
-
-1. Run the combined SQL setup script to create all necessary tables and functions:
-
-```bash
-psql -U your_username -d your_database -f sql/combined_setup.sql
-```
-
-### Running Locally
-
-1. Start the services using Docker Compose:
-
-```bash
-docker-compose up
-```
-
-2. Access the API Gateway at http://localhost:8000
-
-### Deployment
-
-1. Set up GCP project and enable required APIs:
-
-```bash
-gcloud services enable pubsub.googleapis.com run.googleapis.com artifactregistry.googleapis.com
-```
-
-2. Create Pub/Sub topics and subscriptions:
-
-```bash
-./scripts/create_topics.sh your-gcp-project-id
-```
-
-3. Deploy to GCP:
-
-```bash
-./scripts/deploy.sh your-gcp-project-id us-central1
-```
-
-## Project Structure
-
-```
-modern-isoner/
-├── api_gateway/         # API Gateway service
-├── auth_service/        # Authentication service
-├── message_service/     # Message handling service
-├── nlp_service/         # Natural Language Processing service
-├── external_data_service/ # External data fetching service
-├── response_service/    # Response generation service
-├── telegram_bot/        # Telegram Bot interface
-├── middleware/          # Shared middleware components
-├── routes/             # API route definitions
-├── terraform/          # Infrastructure as code
-├── scripts/            # Utility scripts
-├── sql/               # SQL scripts
-└── .github/workflows/  # CI/CD pipelines
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit your changes: `git commit -m 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
