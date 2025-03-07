@@ -1,44 +1,67 @@
 #!/bin/bash
 
-# Check if project ID is provided
-if [ -z "$1" ]; then
-  echo "Usage: $0 <project-id> <region>"
-  exit 1
+# Script to deploy ISONER Modern Chatbot to GCP Cloud Run
+
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: $0 <gcp-project-id> <region>"
+    echo "Example: $0 my-project-id us-central1"
+    exit 1
 fi
 
 PROJECT_ID=$1
-REGION=${2:-us-central1}
-
-# Set project
-gcloud config set project $PROJECT_ID
+REGION=$2
+echo "Deploying ISONER Modern Chatbot to project: $PROJECT_ID in region: $REGION"
 
 # Build and push Docker images
 echo "Building and pushing Docker images..."
 
 # API Gateway
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/api-gateway:latest ./api_gateway
+gcloud builds submit --tag gcr.io/$PROJECT_ID/api-gateway api_gateway/
+gcloud run deploy api-gateway \
+    --image gcr.io/$PROJECT_ID/api-gateway \
+    --platform managed \
+    --region $REGION \
+    --allow-unauthenticated \
+    --project $PROJECT_ID
 
 # Auth Service
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/auth-service:latest ./auth_service
+gcloud builds submit --tag gcr.io/$PROJECT_ID/auth-service auth_service/
+gcloud run deploy auth-service \
+    --image gcr.io/$PROJECT_ID/auth-service \
+    --platform managed \
+    --region $REGION \
+    --project $PROJECT_ID
 
 # Message Service
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/message-service:latest ./message_service
+gcloud builds submit --tag gcr.io/$PROJECT_ID/message-service message_service/
+gcloud run deploy message-service \
+    --image gcr.io/$PROJECT_ID/message-service \
+    --platform managed \
+    --region $REGION \
+    --project $PROJECT_ID
 
 # NLP Service
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/nlp-service:latest ./nlp_service
+gcloud builds submit --tag gcr.io/$PROJECT_ID/nlp-service nlp_service/
+gcloud run deploy nlp-service \
+    --image gcr.io/$PROJECT_ID/nlp-service \
+    --platform managed \
+    --region $REGION \
+    --project $PROJECT_ID
 
 # External Data Service
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/external-data-service:latest ./external_data_service
+gcloud builds submit --tag gcr.io/$PROJECT_ID/external-data-service external_data_service/
+gcloud run deploy external-data-service \
+    --image gcr.io/$PROJECT_ID/external-data-service \
+    --platform managed \
+    --region $REGION \
+    --project $PROJECT_ID
 
 # Response Service
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/isoner-chatbot/response-service:latest ./response_service
-
-echo "Docker images built and pushed successfully!"
-
-# Apply Terraform configuration
-echo "Applying Terraform configuration..."
-cd terraform
-terraform init
-terraform apply -auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+gcloud builds submit --tag gcr.io/$PROJECT_ID/response-service response_service/
+gcloud run deploy response-service \
+    --image gcr.io/$PROJECT_ID/response-service \
+    --platform managed \
+    --region $REGION \
+    --project $PROJECT_ID
 
 echo "Deployment complete!"

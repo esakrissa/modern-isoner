@@ -15,7 +15,7 @@ This project implements a microservices architecture for a chatbot system with t
 
 ## Technologies
 
-- **Backend**: Python 3.9+ with FastAPI
+- **Backend**: Python 3.11+ with FastAPI
 - **Database**: Supabase (PostgreSQL)
 - **Message Broker**: Google Cloud Pub/Sub
 - **Caching**: Redis

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+google-cloud-pubsub
+supabase
+httpx
+jinja2
