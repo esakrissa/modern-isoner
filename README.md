@@ -113,6 +113,61 @@ flowchart TB
     style ES fill:#ffffff,stroke:#000000,stroke-width:1px;
 ```
 
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant TB as Telegram Bot
+    participant AG as API Gateway
+    participant AS as Auth Service
+    participant MS as Message Service
+    participant NLP as NLP Service
+    participant EDS as External Data Service
+    participant RS as Response Service
+    participant SB as Supabase
+    participant PS as Pub/Sub
+    participant RC as Redis Cache
+    participant OAI as OpenAI API
+    participant RAPI as RapidAPI
+
+    User->>TB: Send message
+    TB->>AG: Forward request
+    AG->>AS: Authenticate user
+    AS->>SB: Verify credentials
+    SB-->>AS: User verified
+    AS-->>AG: Auth success
+
+    AG->>MS: Process message
+    MS->>SB: Store message
+    MS->>PS: Publish message
+    PS-->>NLP: Subscribe & process
+
+    par NLP Processing
+        NLP->>OAI: Process text
+        OAI-->>NLP: Intent & entities
+        NLP->>RC: Cache results
+    and External Data
+        NLP->>EDS: Request data
+        EDS->>RAPI: Fetch hotel info
+        EDS->>RC: Cache response
+        RAPI-->>EDS: Hotel data
+        EDS-->>NLP: Processed data
+    end
+
+    NLP->>RS: Generate response
+    RS->>PS: Publish response
+    PS-->>TB: Subscribe & receive
+    TB->>User: Send response
+
+    loop Cache Management
+        RC->>RC: Expire old data
+    end
+
+    Note over NLP,RS: All services use Redis<br/>for caching responses
+    Note over MS,PS: Pub/Sub ensures<br/>asynchronous communication
+```
+
 ## Technologies
 
 - **Backend**: Python 3.11+ with FastAPI
