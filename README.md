@@ -40,37 +40,40 @@ This project implements a microservices architecture for a chatbot system with t
   }
 }}%%
 flowchart TB
-    %% User Interface Layer
-    User([User]) --> TB[Telegram Bot]
-    Admin([Admin]) --> AD[Dashboard]
-    
-    %% Gateway Layer
-    TB --> AG{API Gateway}
-    AD --> AG
-    
-    %% Service Layer
-    AG -->|Auth| AS[Auth Service]
-    AG -->|Message| MS[Message Service]
-    
-    %% Storage Layer
-    AS --> SB[(Supabase DB)]
-    MS --> SB
-    MS --> PS[GCP Pub/Sub]
-    
-    %% Processing Layer
-    PS --> NLP{NLP Service}
-    NLP -->|Process| OAI[OpenAI API]
-    NLP -->|Cache| RC[(Redis)]
-    NLP -->|Data| EDS[External Data]
-    EDS --> RAPI[RapidAPI]
-    
-    %% Response Layer
-    NLP --> RS[Response Service]
-    RS --> PS
-    PS --> TB
-    TB --> User
+    subgraph MainContainer[" "]
+        %% User Interface Layer
+        User([User]) --> TB[Telegram Bot]
+        Admin([Admin]) --> AD[Dashboard]
+        
+        %% Gateway Layer
+        TB --> AG{API Gateway}
+        AD --> AG
+        
+        %% Service Layer
+        AG -->|Auth| AS[Auth Service]
+        AG -->|Message| MS[Message Service]
+        
+        %% Storage Layer
+        AS --> SB[(Supabase DB)]
+        MS --> SB
+        MS --> PS[GCP Pub/Sub]
+        
+        %% Processing Layer
+        PS --> NLP{NLP Service}
+        NLP -->|Process| OAI[OpenAI API]
+        NLP -->|Cache| RC[(Redis)]
+        NLP -->|Data| EDS[External Data]
+        EDS --> RAPI[RapidAPI]
+        
+        %% Response Layer
+        NLP --> RS[Response Service]
+        RS --> PS
+        PS --> TB
+        TB --> User
+    end
 
     %% Styling
+    style MainContainer fill:#ffffff,stroke:#ffffff,stroke-width:4px
     style User fill:#ffffff,stroke:#000000
     style Admin fill:#ffffff,stroke:#000000
     style TB fill:#ffffff,stroke:#000000
@@ -86,6 +89,9 @@ flowchart TB
     style RC fill:#ffffff,stroke:#000000
     style OAI fill:#ffffff,stroke:#000000
     style RAPI fill:#ffffff,stroke:#000000
+
+    %% Link Styling
+    linkStyle default stroke:#000000,stroke-width:2px
 ```
 
 ## Technologies
