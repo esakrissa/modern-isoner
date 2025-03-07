@@ -27,58 +27,85 @@ This project implements a microservices architecture for a chatbot system with t
 ### System Flow Diagram
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'secondaryColor': '#ffffff', 'tertiaryColor': '#ffffff' }}}%%
+%%{init: {
+  'theme': 'base', 
+  'themeVariables': { 
+    'primaryColor': '#ffffff', 
+    'primaryTextColor': '#000000', 
+    'primaryBorderColor': '#000000', 
+    'lineColor': '#000000', 
+    'secondaryColor': '#ffffff', 
+    'tertiaryColor': '#ffffff',
+    'background': '#ffffff'
+  },
+  'flowchart': {
+    'htmlLabels': true,
+    'curve': 'linear',
+    'diagramPadding': 20
+  }
+}}%%
 flowchart TB
-    subgraph "User Interfaces"
+    %% Define nodes with proper spacing
+    subgraph UI["User Interfaces"]
         TB["Telegram Bot"]
-        AD["Admin Dashboard (Optional)"]
+        AD["Admin Dashboard<br/>(Optional)"]
     end
-
-    subgraph "API Layer"
+    
+    subgraph API["API Layer"]
         AG["API Gateway"]
     end
-
-    subgraph "Core Services"
-        AS["Auth Service"]
-        MS["Message Service"]
-        NLP["NLP Service"]
-        EDS["External Data Service"]
-        RS["Response Service"]
+    
+    subgraph CS["Core Services"]
+        AS["Auth<br/>Service"]
+        MS["Message<br/>Service"]
+        NLP["NLP<br/>Service"]
+        EDS["External Data<br/>Service"]
+        RS["Response<br/>Service"]
     end
-
-    subgraph "Data Storage & Messaging"
+    
+    subgraph DS["Data Storage & Messaging"]
         SB[(Supabase DB)]
         PS["GCP Pub/Sub"]
         RC[(Redis Cache)]
     end
-
-    subgraph "External Services"
+    
+    subgraph ES["External Services"]
         OAI["OpenAI API"]
-        RAPI["RapidAPI (Booking.com)"]
+        RAPI["RapidAPI<br/>(Booking.com)"]
     end
-
-    TB --> AG
-    AD --> AG
     
-    AG --> AS & MS
+    %% Define connections with proper spacing
+    TB -->|"Request"| AG
+    AD -->|"Admin<br/>Request"| AG
     
-    AS --> SB
-    MS --> SB
-    MS --> PS
+    AG -->|"Auth<br/>Request"| AS
+    AG -->|"Message<br/>Request"| MS
     
-    PS --> NLP
-    NLP --> OAI
-    NLP --> RC
+    AS -->|"Store/Query"| SB
+    MS -->|"Store/Query"| SB
+    MS -->|"Publish"| PS
     
-    NLP --> EDS & RS
+    PS -->|"Subscribe"| NLP
+    NLP -->|"Process"| OAI
+    NLP -->|"Cache"| RC
     
-    EDS --> RAPI
-    EDS --> RC
+    NLP -->|"Request<br/>Data"| EDS
+    NLP -->|"Generate<br/>Response"| RS
     
-    RS --> PS
-    PS --> TB
-
-    linkStyle default stroke:#000000,stroke-width:1px;
+    EDS -->|"Fetch"| RAPI
+    EDS -->|"Cache"| RC
+    
+    RS -->|"Publish"| PS
+    PS -->|"Subscribe"| TB
+    
+    %% Style all links and nodes
+    linkStyle default stroke:#000000,stroke-width:1.5px;
+    
+    style UI fill:#ffffff,stroke:#000000,stroke-width:1px;
+    style API fill:#ffffff,stroke:#000000,stroke-width:1px;
+    style CS fill:#ffffff,stroke:#000000,stroke-width:1px;
+    style DS fill:#ffffff,stroke:#000000,stroke-width:1px;
+    style ES fill:#ffffff,stroke:#000000,stroke-width:1px;
 ```
 
 ## Technologies
