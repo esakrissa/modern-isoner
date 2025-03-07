@@ -1,0 +1,107 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio httpx
+        
+        # Install dependencies for each service
+        for service in api_gateway auth_service message_service nlp_service external_data_service response_service; do
+          if [ -f $service/requirements.txt ]; then
+            pip install -r $service/requirements.txt
+          fi
+        done
+        
+    - name: Run tests
+      run: |
+        pytest */tests/
+
+  build-and-deploy:
+    name: Build and Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+        
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      
+    - name: Build and push API Gateway
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/api-gateway:latest ./api_gateway
+        
+    - name: Build and push Auth Service
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/auth-service:latest ./auth_service
+        
+    - name: Build and push Message Service
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/message-service:latest ./message_service
+        
+    - name: Build and push NLP Service
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/nlp-service:latest ./nlp_service
+        
+    - name: Build and push External Data Service
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/external-data-service:latest ./external_data_service
+        
+    - name: Build and push Response Service
+      run: |
+        gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/isoner-chatbot/response-service:latest ./response_service
+        
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      
+    - name: Terraform Init
+      run: |
+        cd terraform
+        terraform init
+      
+    - name: Terraform Apply
+      run: |
+        cd terraform
+        terraform apply -auto-approve \
+          -var="project_id=${{ env.PROJECT_ID }}" \
+          -var="region=${{ env.REGION }}" \
+          -var="supabase_url=${{ secrets.SUPABASE_URL }}" \
+          -var="supabase_key=${{ secrets.SUPABASE_KEY }}" \
+          -var="redis_host=${{ secrets.REDIS_HOST }}" \
+          -var="redis_port=${{ secrets.REDIS_PORT }}" \
+          -var="redis_password=${{ secrets.REDIS_PASSWORD }}" \
+          -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
+          -var="rapidapi_key=${{ secrets.RAPIDAPI_KEY }}"

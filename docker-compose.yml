@@ -1,0 +1,90 @@
+version: '3'
+
+services:
+  api-gateway:
+    build: ./api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - MESSAGE_SERVICE_URL=http://message-service:8002
+      - EXTERNAL_DATA_SERVICE_URL=http://external-data-service:8004
+    depends_on:
+      - auth-service
+      - message-service
+      - external-data-service
+
+  auth-service:
+    build: ./auth_service
+    ports:
+      - "8001:8001"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+
+  message-service:
+    build: ./message_service
+    ports:
+      - "8002:8002"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - PUBSUB_INCOMING_MESSAGES_TOPIC=incoming-messages
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+
+  nlp-service:
+    build: ./nlp_service
+    ports:
+      - "8003:8003"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - PUBSUB_INCOMING_MESSAGES_TOPIC=incoming-messages
+      - PUBSUB_INCOMING_MESSAGES_SUBSCRIPTION=incoming-messages-nlp-sub
+      - PUBSUB_PROCESSED_MESSAGES_TOPIC=processed-messages
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+    depends_on:
+      - redis
+
+  external-data-service:
+    build: ./external_data_service
+    ports:
+      - "8004:8004"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+    depends_on:
+      - redis
+
+  response-service:
+    build: ./response_service
+    ports:
+      - "8005:8005"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - PUBSUB_PROCESSED_MESSAGES_TOPIC=processed-messages
+      - PUBSUB_PROCESSED_MESSAGES_SUBSCRIPTION=processed-messages-response-sub
+      - PUBSUB_OUTGOING_MESSAGES_TOPIC=outgoing-messages
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
