@@ -98,6 +98,7 @@ CREATE FUNCTION insert_bot_message(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_message_id UUID;
@@ -137,6 +138,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -169,6 +171,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -191,6 +194,7 @@ CREATE OR REPLACE FUNCTION has_permission(p_user_id UUID, p_permission_name TEXT
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_has_permission BOOLEAN;
@@ -216,6 +220,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -235,6 +240,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -294,6 +300,8 @@ ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE intents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -359,4 +367,28 @@ CREATE POLICY "Admins can manage user roles" ON user_roles
 CREATE POLICY "Users can view their own roles" ON user_roles
   FOR SELECT USING (
     auth.uid() = user_id OR has_permission(auth.uid(), 'view_users')
+  );
+
+-- Intents policies
+CREATE POLICY "Admins can manage intents" ON intents
+  FOR ALL USING (
+    has_permission(auth.uid(), 'manage_permissions')
+  );
+  
+CREATE POLICY "All users can view intents" ON intents
+  FOR SELECT USING (true);
+
+-- Entities policies
+CREATE POLICY "Users can view entities from their messages" ON entities
+  FOR SELECT USING (
+    message_id IN (
+      SELECT m.id FROM messages m
+      JOIN conversations c ON m.conversation_id = c.id
+      WHERE c.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "System can manage entities" ON entities
+  FOR ALL USING (
+    has_permission(auth.uid(), 'manage_permissions')
   ); 
