@@ -26,7 +26,14 @@ This project implements a microservices architecture for a chatbot system with t
 
 ### System Flow Diagram
 
-![Modern ISONER Architecture](./docs/assets/system-flow-diagram.svg)
+<details>
+<summary>Click to expand/collapse the architecture diagram</summary>
+
+<div align="center">
+  <img src="./docs/assets/architecture-diagram.svg" alt="Modern ISONER Architecture" width="100%">
+</div>
+
+</details>
 
 ## 💻 Technologies
 
