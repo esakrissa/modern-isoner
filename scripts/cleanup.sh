@@ -12,7 +12,7 @@ fi
 PROJECT_ID=$1
 REGION=${2:-"us-central1"}
 ZONE="${REGION}-a"
-INSTANCE_NAME="isoner-services"
+INSTANCE_NAME="modern-isoner-services"
 
 echo "🧹 Cleaning up Modern ISONER resources in project: $PROJECT_ID"
 echo "This will remove ALL resources created during deployment!"
@@ -48,8 +48,8 @@ gcloud compute instances delete $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_I
 # Delete firewall rules
 echo "Deleting firewall rules..."
 # First, list all firewall rules that might be related to our project
-echo "Looking for firewall rules with 'isoner' or 'allow' in the name..."
-FIREWALL_RULES=$(gcloud compute firewall-rules list --filter="name~'isoner' OR name~'allow'" --format="value(name)" --project=$PROJECT_ID)
+echo "Looking for firewall rules with 'modern-isoner' or 'allow' in the name..."
+FIREWALL_RULES=$(gcloud compute firewall-rules list --filter="name~'modern-isoner' OR name~'allow'" --format="value(name)" --project=$PROJECT_ID)
 
 if [ -n "$FIREWALL_RULES" ]; then
     echo "Found the following firewall rules to delete:"

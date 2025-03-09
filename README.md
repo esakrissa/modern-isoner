@@ -205,7 +205,7 @@ Note: This will create a VM instance using Ubuntu 24.04 LTS (Noble) on an e2-mic
 First, get the IP address of your VM instance:
 
 ```bash
-INSTANCE_IP=$(gcloud compute instances describe isoner-services --zone=us-central1-a --project=your-gcp-project-id --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+INSTANCE_IP=$(gcloud compute instances describe modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 ```
 
 Then deploy the Cloud Run services:
@@ -232,7 +232,7 @@ To check if all services are running properly:
 
 ```bash
 # Check VM services
-gcloud compute ssh isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker ps"
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker ps"
 
 # Check Cloud Run services
 gcloud run services list --platform managed --region=us-central1 --project=your-gcp-project-id
@@ -244,9 +244,9 @@ To view logs:
 
 ```bash
 # VM logs
-gcloud compute ssh isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs api-gateway"
-gcloud compute ssh isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs auth-service"
-gcloud compute ssh isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs redis"
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs api-gateway"
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs auth-service"
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker logs redis"
 
 # Cloud Run logs
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=message-service" --project=your-gcp-project-id --limit=10
@@ -281,7 +281,7 @@ To restart services:
 
 ```bash
 # Restart VM services
-gcloud compute ssh isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker-compose restart"
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project=your-gcp-project-id --command "docker-compose restart"
 
 # Restart Cloud Run services (requires redeployment)
 gcloud run deploy message-service --image gcr.io/your-gcp-project-id/message-service --platform managed --region us-central1

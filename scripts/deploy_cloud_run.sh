@@ -95,7 +95,7 @@ MESSAGE_SERVICE_URL=$(gcloud run services describe message-service --platform ma
 EXTERNAL_DATA_SERVICE_URL=$(gcloud run services describe external-data-service --platform managed --region $REGION --project $PROJECT_ID --format="value(status.url)")
 
 echo "Updating API Gateway configuration with Cloud Run service URLs..."
-gcloud compute ssh isoner-services --zone=us-central1-a --project $PROJECT_ID --command "
+gcloud compute ssh modern-isoner-services --zone=us-central1-a --project $PROJECT_ID --command "
     # Update environment variables in docker-compose.yml
     sed -i 's|MESSAGE_SERVICE_URL=.*|MESSAGE_SERVICE_URL=$MESSAGE_SERVICE_URL|g' .env
     sed -i 's|EXTERNAL_DATA_SERVICE_URL=.*|EXTERNAL_DATA_SERVICE_URL=$EXTERNAL_DATA_SERVICE_URL|g' .env

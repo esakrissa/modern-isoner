@@ -10,7 +10,7 @@ if [ -z "$1" ]; then
 fi
 
 PROJECT_ID=$1
-INSTANCE_NAME="isoner-services"
+INSTANCE_NAME="modern-isoner-services"
 ZONE="us-central1-a"  # Choose a zone that offers e2-micro in always free tier
 INSTANCE_TYPE="e2-micro"  # Using e2-micro type for free tier, but naming as VM instance
 
@@ -73,20 +73,20 @@ if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PR
         "
     
     # Add firewall rules to allow HTTP/HTTPS traffic
-    gcloud compute firewall-rules create isoner-allow-http \
+    gcloud compute firewall-rules create modern-isoner-allow-http \
         --project=$PROJECT_ID \
         --allow=tcp:80,tcp:8000 \
         --target-tags=http-server \
         --description="Allow HTTP traffic" || true  # Continue if rule exists
     
-    gcloud compute firewall-rules create isoner-allow-https \
+    gcloud compute firewall-rules create modern-isoner-allow-https \
         --project=$PROJECT_ID \
         --allow=tcp:443 \
         --target-tags=https-server \
         --description="Allow HTTPS traffic" || true  # Continue if rule exists
     
     # Allow Redis port for internal access
-    gcloud compute firewall-rules create isoner-allow-redis \
+    gcloud compute firewall-rules create modern-isoner-allow-redis \
         --project=$PROJECT_ID \
         --allow=tcp:6379 \
         --target-tags=http-server \

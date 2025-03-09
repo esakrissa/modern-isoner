@@ -39,7 +39,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Get the VM instance IP
-INSTANCE_NAME="isoner-services"
+INSTANCE_NAME="modern-isoner-services"
 ZONE="us-central1-a"
 INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
