@@ -28,7 +28,8 @@ gcloud run deploy message-service \
     --max-instances 2 \
     --memory 512Mi \
     --cpu 1 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,API_GATEWAY_URL=http://$VM_IP:8000,GCP_PROJECT_ID=$PROJECT_ID" \
+    --port 8080 \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,API_GATEWAY_URL=http://$VM_IP:8000,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
     --project $PROJECT_ID
 
 # NLP Service (higher memory allocation for AI processing)
@@ -42,7 +43,8 @@ gcloud run deploy nlp-service \
     --max-instances 2 \
     --memory 1024Mi \
     --cpu 1 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID" \
+    --port 8080 \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
     --project $PROJECT_ID
 
 # External Data Service
@@ -56,7 +58,8 @@ gcloud run deploy external-data-service \
     --max-instances 2 \
     --memory 512Mi \
     --cpu 1 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379" \
+    --port 8080 \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,PORT=8080" \
     --project $PROJECT_ID
 
 # Response Service
@@ -70,7 +73,8 @@ gcloud run deploy response-service \
     --max-instances 2 \
     --memory 512Mi \
     --cpu 1 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID" \
+    --port 8080 \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
     --project $PROJECT_ID
 
 # Telegram Bot (using webhook mode for better resource usage)
@@ -87,6 +91,7 @@ gcloud run deploy telegram-bot \
     --max-instances 2 \
     --memory 512Mi \
     --cpu 1 \
+    --port 8080 \
     --set-env-vars "API_GATEWAY_URL=$API_GATEWAY_URL,GCP_PROJECT_ID=$PROJECT_ID,TELEGRAM_WEBHOOK_MODE=true,PORT=8080" \
     --project $PROJECT_ID
 
@@ -96,12 +101,12 @@ EXTERNAL_DATA_SERVICE_URL=$(gcloud run services describe external-data-service -
 
 echo "Updating API Gateway configuration with Cloud Run service URLs..."
 gcloud compute ssh modern-isoner-services --zone=us-central1-a --project $PROJECT_ID --command "
-    # Update environment variables in docker-compose.yml
+    # Update environment variables in .env file
     sed -i 's|MESSAGE_SERVICE_URL=.*|MESSAGE_SERVICE_URL=$MESSAGE_SERVICE_URL|g' .env
     sed -i 's|EXTERNAL_DATA_SERVICE_URL=.*|EXTERNAL_DATA_SERVICE_URL=$EXTERNAL_DATA_SERVICE_URL|g' .env
     
     # Restart API Gateway to apply changes
-    docker-compose restart api-gateway
+    sudo docker-compose restart api-gateway
 "
 
 # Setup Telegram webhook
