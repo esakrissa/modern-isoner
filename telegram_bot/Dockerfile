@@ -7,4 +7,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "bot.py"] 
+# Use PORT environment variable with default to 8080
+ENV PORT=8080
+
+# Use the PORT environment variable in the CMD
+# The bot.py file should be updated to listen on the PORT environment variable
+CMD ["sh", "-c", "python bot.py"] 

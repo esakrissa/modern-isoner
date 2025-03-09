@@ -87,7 +87,7 @@ gcloud run deploy telegram-bot \
     --max-instances 2 \
     --memory 512Mi \
     --cpu 1 \
-    --set-env-vars "API_GATEWAY_URL=$API_GATEWAY_URL,GCP_PROJECT_ID=$PROJECT_ID,TELEGRAM_WEBHOOK_MODE=true" \
+    --set-env-vars "API_GATEWAY_URL=$API_GATEWAY_URL,GCP_PROJECT_ID=$PROJECT_ID,TELEGRAM_WEBHOOK_MODE=true,PORT=8080" \
     --project $PROJECT_ID
 
 # Get service URLs to update API Gateway configuration

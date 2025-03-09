@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Telegram Bot for ISONER Modern Chatbot
+Telegram Bot for Modern ISONER Chatbot
 This script runs a Telegram bot that interacts with the ISONER system.
 """
 
@@ -14,6 +14,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import httpx
 from google.cloud import pubsub_v1
 from concurrent.futures import TimeoutError
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +33,8 @@ API_GATEWAY_URL = os.getenv("API_GATEWAY_URL", "http://localhost:8000")
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 OUTGOING_MESSAGES_TOPIC = os.getenv("PUBSUB_OUTGOING_MESSAGES_TOPIC", "outgoing-messages")
 OUTGOING_MESSAGES_SUBSCRIPTION = os.getenv("PUBSUB_OUTGOING_MESSAGES_SUBSCRIPTION", "outgoing-messages-telegram-sub")
+WEBHOOK_MODE = os.getenv("TELEGRAM_WEBHOOK_MODE", "false").lower() == "true"
+PORT = int(os.getenv("PORT", "8080"))
 
 # Check if token is provided
 if not TELEGRAM_BOT_TOKEN:
@@ -44,18 +48,19 @@ subscription_path = subscriber.subscription_path(GCP_PROJECT_ID, OUTGOING_MESSAG
 # Dictionary to store active conversations
 active_conversations = {}
 
+# Create FastAPI app for webhook mode
+app = FastAPI(title="Telegram Bot Webhook")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     await update.message.reply_html(
-        f"Hi {user.mention_html()}! I'm the ISONER Chatbot. How can I help you today?"
+        f"Hi {user.mention_html()}! I'm the Modern ISONER  Chatbot. How can I help you today?",
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
-    await update.message.reply_text(
-        "I can help you with various tasks. Just send me a message and I'll do my best to assist you."
-    )
+    await update.message.reply_text("I can help you with hotel bookings and information. Just ask me anything!")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming messages from users."""
@@ -63,117 +68,159 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     chat_id = update.effective_chat.id
     message_text = update.message.text
     
-    # Store the chat_id for later use when receiving responses
-    active_conversations[str(user_id)] = chat_id
+    logger.info(f"Received message from user {user_id}: {message_text}")
     
+    # Store conversation in active conversations
+    if chat_id not in active_conversations:
+        active_conversations[chat_id] = {
+            "user_id": user_id,
+            "messages": []
+        }
+    
+    active_conversations[chat_id]["messages"].append({
+        "role": "user",
+        "content": message_text
+    })
+    
+    # Send message to API Gateway
     try:
-        # Send message to API Gateway
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{API_GATEWAY_URL}/messages/send",
+                f"{API_GATEWAY_URL}/api/v1/messages",
                 json={
                     "user_id": str(user_id),
-                    "content": message_text,
-                    "content_type": "text"
-                },
-                headers={"Content-Type": "application/json"}
+                    "chat_id": str(chat_id),
+                    "content": message_text
+                }
             )
             
-            if response.status_code != 200:
-                logger.error(f"Error sending message to API Gateway: {response.text}")
-                await update.message.reply_text(
-                    "Sorry, I'm having trouble processing your message. Please try again later."
-                )
+            if response.status_code == 202:
+                await update.message.reply_text("I'm processing your request...")
             else:
-                # Let the user know we're processing their message
-                await update.message.reply_text("Processing your message...")
-                
+                logger.error(f"Error sending message to API Gateway: {response.status_code} {response.text}")
+                await update.message.reply_text("Sorry, I'm having trouble processing your request. Please try again later.")
     except Exception as e:
         logger.error(f"Error communicating with API Gateway: {e}")
-        await update.message.reply_text(
-            "Sorry, I'm having trouble connecting to my backend. Please try again later."
-        )
+        await update.message.reply_text("Sorry, I'm having trouble connecting to my services. Please try again later.")
 
 async def process_responses():
-    """Process responses from Pub/Sub and send them to users."""
+    """Process responses from Pub/Sub subscription."""
+    
     def callback(message):
+        """Process a Pub/Sub message."""
         try:
             data = json.loads(message.data.decode("utf-8"))
-            user_id = data.get("user_id")
+            logger.info(f"Received response message: {data}")
+            
+            chat_id = data.get("chat_id")
             content = data.get("content")
             content_type = data.get("content_type", "text")
             
-            if user_id and content:
-                chat_id = active_conversations.get(user_id)
-                if chat_id:
-                    # Use asyncio to send the message
-                    asyncio.create_task(send_telegram_message(chat_id, content, content_type))
-                else:
-                    logger.warning(f"Received message for unknown user: {user_id}")
+            if chat_id and content:
+                # Use asyncio to call the async function from this sync callback
+                loop = asyncio.get_event_loop()
+                loop.create_task(send_telegram_message(chat_id, content, content_type))
+                
+                # Store bot response in conversation history
+                if chat_id in active_conversations:
+                    active_conversations[chat_id]["messages"].append({
+                        "role": "assistant",
+                        "content": content
+                    })
             
             message.ack()
         except Exception as e:
             logger.error(f"Error processing Pub/Sub message: {e}")
-            message.ack()  # Ack anyway to avoid reprocessing problematic messages
+            message.nack()
     
-    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    # Start the Pub/Sub subscriber
+    streaming_pull_future = subscriber.subscribe(
+        subscription_path, callback=callback
+    )
     logger.info(f"Listening for messages on {subscription_path}")
     
-    # Keep the thread alive
     try:
-        streaming_pull_future.result()
-    except TimeoutError:
-        streaming_pull_future.cancel()
-        streaming_pull_future.result()
+        # Keep the subscriber alive
+        while True:
+            await asyncio.sleep(60)
     except Exception as e:
-        logger.error(f"Error in Pub/Sub subscription: {e}")
+        logger.error(f"Error in Pub/Sub subscriber: {e}")
         streaming_pull_future.cancel()
         streaming_pull_future.result()
 
 async def send_telegram_message(chat_id, content, content_type):
     """Send a message to a Telegram chat."""
     try:
-        bot = Application.get_current().bot
+        # Create a bot instance
+        from telegram import Bot
+        bot = Bot(token=TELEGRAM_BOT_TOKEN)
+        
         if content_type == "text":
             await bot.send_message(chat_id=chat_id, text=content)
-        elif content_type == "photo":
-            # Assuming content is a URL to a photo
+        elif content_type == "image":
+            # Handle image URLs
             await bot.send_photo(chat_id=chat_id, photo=content)
         elif content_type == "document":
-            # Assuming content is a URL to a document
+            # Handle document URLs
             await bot.send_document(chat_id=chat_id, document=content)
-        elif content_type == "location":
-            # Assuming content is a dict with latitude and longitude
-            location = json.loads(content) if isinstance(content, str) else content
-            await bot.send_location(
-                chat_id=chat_id, 
-                latitude=location.get("latitude"), 
-                longitude=location.get("longitude")
-            )
         else:
-            logger.warning(f"Unsupported content type: {content_type}")
-            await bot.send_message(
-                chat_id=chat_id, 
-                text=f"Received content of unsupported type: {content_type}"
-            )
+            # Default to text
+            await bot.send_message(chat_id=chat_id, text=content)
+            
+        logger.info(f"Sent message to chat {chat_id}")
     except Exception as e:
         logger.error(f"Error sending Telegram message: {e}")
 
-def main() -> None:
-    """Start the bot."""
-    # Create the Application
+@app.post("/webhook")
+async def webhook(request: Request):
+    """Handle webhook requests from Telegram."""
+    update_data = await request.json()
+    update = Update.de_json(update_data, None)
+    
+    # Create Application instance
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-
+    
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    # Process the update
+    await application.process_update(update)
+    
+    return JSONResponse(content={"status": "ok"})
 
-    # Start the Pub/Sub listener in a separate task
-    asyncio.create_task(asyncio.to_thread(process_responses))
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "mode": "webhook" if WEBHOOK_MODE else "polling"}
 
-    # Run the bot until the user presses Ctrl-C
-    application.run_polling()
+def main() -> None:
+    """Start the bot."""
+    if WEBHOOK_MODE:
+        # Start FastAPI server for webhook mode
+        import uvicorn
+        
+        # Start the Pub/Sub listener in a separate thread
+        asyncio.create_task(asyncio.to_thread(process_responses))
+        
+        # Run the FastAPI server
+        logger.info(f"Starting webhook server on port {PORT}")
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
+    else:
+        # Create the Application for polling mode
+        application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+
+        # Add handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+        # Start the Pub/Sub listener in a separate task
+        asyncio.create_task(asyncio.to_thread(process_responses))
+
+        # Run the bot until the user presses Ctrl-C
+        application.run_polling()
 
 if __name__ == "__main__":
     main() 

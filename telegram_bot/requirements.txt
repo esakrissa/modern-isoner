@@ -1,4 +1,6 @@
 python-telegram-bot
 httpx
 python-dotenv
-google-cloud-pubsub 
+google-cloud-pubsub
+fastapi
+uvicorn 
