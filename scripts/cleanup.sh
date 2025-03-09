@@ -47,9 +47,9 @@ gcloud compute instances delete $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_I
 
 # Delete firewall rules
 echo "Deleting firewall rules..."
-# First, list all firewall rules that might be related to our project
-echo "Looking for firewall rules with 'modern-isoner' or 'allow' in the name..."
-FIREWALL_RULES=$(gcloud compute firewall-rules list --filter="name~'modern-isoner' OR name~'allow'" --format="value(name)" --project=$PROJECT_ID)
+# Only target firewall rules created by our deployment (with modern-isoner prefix)
+echo "Looking for firewall rules with 'modern-isoner' prefix..."
+FIREWALL_RULES=$(gcloud compute firewall-rules list --filter="name:modern-isoner*" --format="value(name)" --project=$PROJECT_ID)
 
 if [ -n "$FIREWALL_RULES" ]; then
     echo "Found the following firewall rules to delete:"

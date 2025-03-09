@@ -38,6 +38,74 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Verify firewall rules
+echo "Verifying firewall rules..."
+REQUIRED_RULES=("modern-isoner-allow-http" "modern-isoner-allow-https" "modern-isoner-allow-redis" "modern-isoner-allow-ssh" "modern-isoner-allow-internal")
+MISSING_RULES=()
+
+for RULE in "${REQUIRED_RULES[@]}"; do
+    if ! gcloud compute firewall-rules describe $RULE --project=$PROJECT_ID &>/dev/null; then
+        MISSING_RULES+=($RULE)
+    fi
+done
+
+if [ ${#MISSING_RULES[@]} -gt 0 ]; then
+    echo "⚠️ Warning: Some required firewall rules are missing:"
+    for RULE in "${MISSING_RULES[@]}"; do
+        echo "  - $RULE"
+    done
+    echo "Creating missing firewall rules..."
+    
+    # Create missing HTTP rule if needed
+    if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-http " ]]; then
+        gcloud compute firewall-rules create modern-isoner-allow-http \
+            --project=$PROJECT_ID \
+            --allow=tcp:80,tcp:8000 \
+            --target-tags=http-server \
+            --description="Allow HTTP traffic" || true
+    fi
+    
+    # Create missing HTTPS rule if needed
+    if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-https " ]]; then
+        gcloud compute firewall-rules create modern-isoner-allow-https \
+            --project=$PROJECT_ID \
+            --allow=tcp:443 \
+            --target-tags=https-server \
+            --description="Allow HTTPS traffic" || true
+    fi
+    
+    # Create missing Redis rule if needed
+    if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-redis " ]]; then
+        gcloud compute firewall-rules create modern-isoner-allow-redis \
+            --project=$PROJECT_ID \
+            --allow=tcp:6379 \
+            --target-tags=http-server \
+            --description="Allow Redis traffic" \
+            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" || true
+    fi
+    
+    # Create missing SSH rule if needed
+    if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-ssh " ]]; then
+        gcloud compute firewall-rules create modern-isoner-allow-ssh \
+            --project=$PROJECT_ID \
+            --allow=tcp:22 \
+            --target-tags=http-server,https-server \
+            --description="Allow SSH access to VM instance" || true
+    fi
+    
+    # Create missing internal rule if needed
+    if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-internal " ]]; then
+        gcloud compute firewall-rules create modern-isoner-allow-internal \
+            --project=$PROJECT_ID \
+            --allow=tcp:1-65535,udp:1-65535,icmp \
+            --target-tags=http-server,https-server \
+            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
+            --description="Allow internal communication between services" || true
+    fi
+else
+    echo "✅ All required firewall rules are in place."
+fi
+
 # Get the VM instance IP
 INSTANCE_NAME="modern-isoner-services"
 ZONE="us-central1-a"

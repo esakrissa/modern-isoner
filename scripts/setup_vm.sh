@@ -92,6 +92,21 @@ if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PR
         --target-tags=http-server \
         --description="Allow Redis traffic" \
         --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" || true  # Continue if rule exists
+    
+    # Ensure SSH access is allowed (essential)
+    gcloud compute firewall-rules create modern-isoner-allow-ssh \
+        --project=$PROJECT_ID \
+        --allow=tcp:22 \
+        --target-tags=http-server,https-server \
+        --description="Allow SSH access to VM instance" || true  # Continue if rule exists
+    
+    # Allow internal communication between services
+    gcloud compute firewall-rules create modern-isoner-allow-internal \
+        --project=$PROJECT_ID \
+        --allow=tcp:1-65535,udp:1-65535,icmp \
+        --target-tags=http-server,https-server \
+        --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
+        --description="Allow internal communication between services" || true  # Continue if rule exists
 else
     echo "Instance $INSTANCE_NAME already exists, skipping creation."
 fi

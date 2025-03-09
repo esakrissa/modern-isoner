@@ -289,7 +289,13 @@ gcloud run deploy message-service --image gcr.io/your-gcp-project-id/message-ser
 
 ### Security Considerations
 
-1. **Firewall Rules**: Only necessary ports are exposed.
+1. **Firewall Rules**: The deployment creates the following firewall rules with the 'modern-isoner' prefix:
+   - `modern-isoner-allow-http`: Allows HTTP traffic (ports 80, 8000)
+   - `modern-isoner-allow-https`: Allows HTTPS traffic (port 443)
+   - `modern-isoner-allow-redis`: Allows Redis traffic (port 6379) from internal networks
+   - `modern-isoner-allow-ssh`: Allows SSH access (port 22)
+   - `modern-isoner-allow-internal`: Allows internal communication between services
+
 2. **Service Authentication**: Cloud Run services use internal authentication.
 3. **Redis Access**: Redis is only accessible from within the GCP network.
 4. **Supabase Security**: Follows Supabase best practices for authentication and authorization.
