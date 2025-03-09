@@ -310,8 +310,8 @@ modern-isoner/
 ├── docs/                # Documentation files and assets
 ├── sql/                 # Database setup and migration scripts
 ├── scripts/             # Deployment and utility scripts
-├── .github/workflows/   # CI/CD pipelines
 ├── docker-compose.yml   # Local development container orchestration
+├── .github/workflows/   # CI/CD pipelines
 └── .env.example         # Example environment variables template
 ```
 
