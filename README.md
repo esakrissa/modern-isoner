@@ -36,10 +36,10 @@ This project implements a microservices architecture for a chatbot system with t
 </details>
 
 <details>
-<summary>Click to view the architecture diagram alternate version</summary>
+<summary>Click to view the architecture diagram alternative version</summary>
 
 <div align="center">
-  <img src="./docs/assets/system-flow-diagram-alt.svg" alt="Modern ISONER Architecture" width="100%">
+  <img src="./docs/assets/system-flow-diagram-alternative.svg" alt="Modern ISONER Architecture" width="100%">
 </div>
 
 </details>
