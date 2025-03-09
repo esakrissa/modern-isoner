@@ -140,7 +140,7 @@ The deployment is optimized to stay within GCP's free tier limits:
 
 2. **Cloud Run** hosts:
    - Message Service
-   - NLP Service (with 2GB memory for AI processing)
+   - NLP Service (with 1GB memory for AI processing)
    - External Data Service
    - Response Service
    - Telegram Bot (in webhook mode)
