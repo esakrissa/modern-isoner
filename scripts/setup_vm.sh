@@ -32,16 +32,28 @@ if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PR
         # Update system and install dependencies
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git docker.io apt-transport-https ca-certificates curl software-properties-common gnupg
+        apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release git
+
+        # Install Docker using the official Docker repository
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        apt-get update
+        apt-get install -y docker-ce docker-ce-cli containerd.io
         
         # Set up Docker properly
         systemctl start docker
         systemctl enable docker
-        usermod -aG docker \$USER
+        usermod -aG docker ubuntu
         
-        # Install Docker Compose
-        curl -L \"https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+        # Install Docker Compose v2
+        mkdir -p /usr/local/lib/docker/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+        chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+        ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+        
+        # Verify installations
+        docker --version
+        docker-compose --version
         
         # Optimize the system for e2-micro
         # Reduce swappiness to improve performance
@@ -61,20 +73,20 @@ if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PR
         "
     
     # Add firewall rules to allow HTTP/HTTPS traffic
-    gcloud compute firewall-rules create allow-http \
+    gcloud compute firewall-rules create isoner-allow-http \
         --project=$PROJECT_ID \
-        --allow=tcp:80 \
+        --allow=tcp:80,tcp:8000 \
         --target-tags=http-server \
         --description="Allow HTTP traffic" || true  # Continue if rule exists
     
-    gcloud compute firewall-rules create allow-https \
+    gcloud compute firewall-rules create isoner-allow-https \
         --project=$PROJECT_ID \
         --allow=tcp:443 \
         --target-tags=https-server \
         --description="Allow HTTPS traffic" || true  # Continue if rule exists
     
     # Allow Redis port for internal access
-    gcloud compute firewall-rules create allow-redis \
+    gcloud compute firewall-rules create isoner-allow-redis \
         --project=$PROJECT_ID \
         --allow=tcp:6379 \
         --target-tags=http-server \
@@ -86,7 +98,7 @@ fi
 
 # Wait for instance to be ready (important for newly created instances)
 echo "Waiting for instance to be ready..."
-sleep 30
+sleep 60  # Increased wait time to ensure startup script completes
 
 # Get the instance external IP
 INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
@@ -100,6 +112,31 @@ gcloud compute scp --recurse api_gateway auth_service docker-compose.yml .env \
 # Connect to the instance and set up Redis, API Gateway, and Auth Service
 echo "Setting up Redis, API Gateway, and Auth Service on the instance..."
 gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID --command "
+    # Verify Docker installation
+    echo 'Verifying Docker installation...'
+    if ! command -v docker &> /dev/null; then
+        echo 'Docker is not installed. Installing Docker...'
+        sudo apt-get update
+        sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        sudo usermod -aG docker \$USER
+    fi
+    
+    # Verify Docker Compose installation
+    echo 'Verifying Docker Compose installation...'
+    if ! command -v docker-compose &> /dev/null; then
+        echo 'Docker Compose is not installed. Installing Docker Compose...'
+        sudo mkdir -p /usr/local/lib/docker/cli-plugins
+        sudo curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+        sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+        sudo ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+    fi
+    
     # Setup Redis with optimal configuration for VM instance
     echo 'Setting up Redis...'
     mkdir -p ~/redis/data
@@ -146,13 +183,18 @@ gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID --command "
     list-compress-depth 0
 EOF
     
-    # Make sure redis directory is in the docker-compose.yml
-    sed -i 's|./redis/data:/data|~/redis/data:/data|g' docker-compose.yml
-    sed -i 's|./redis/redis.conf:/usr/local/etc/redis/redis.conf|~/redis/redis.conf:/usr/local/etc/redis/redis.conf|g' docker-compose.yml
+    # Fix paths in docker-compose.yml
+    echo 'Updating docker-compose.yml with correct paths...'
+    sed -i 's|./redis/data:/data|$HOME/redis/data:/data|g' docker-compose.yml
+    sed -i 's|./redis/redis.conf:/usr/local/etc/redis/redis.conf|$HOME/redis/redis.conf:/usr/local/etc/redis/redis.conf|g' docker-compose.yml
     
     # Build and start the containers
     echo 'Building and starting containers...'
-    docker-compose up -d
+    sudo docker-compose up -d
+    
+    # Check if containers are running
+    echo 'Checking container status...'
+    sudo docker ps
     
     # Enable automatic container restart on boot
     sudo systemctl enable docker
