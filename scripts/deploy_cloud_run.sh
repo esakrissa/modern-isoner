@@ -29,7 +29,7 @@ gcloud run deploy message-service \
     --memory 512Mi \
     --cpu 1 \
     --port 8080 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,API_GATEWAY_URL=http://$VM_IP:8000,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,API_GATEWAY_URL=http://$VM_IP:8000,GCP_PROJECT_ID=$PROJECT_ID" \
     --project $PROJECT_ID
 
 # NLP Service (higher memory allocation for AI processing)
@@ -44,7 +44,7 @@ gcloud run deploy nlp-service \
     --memory 1024Mi \
     --cpu 1 \
     --port 8080 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID" \
     --project $PROJECT_ID
 
 # External Data Service
@@ -59,7 +59,7 @@ gcloud run deploy external-data-service \
     --memory 512Mi \
     --cpu 1 \
     --port 8080 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,PORT=8080" \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379" \
     --project $PROJECT_ID
 
 # Response Service
@@ -74,7 +74,7 @@ gcloud run deploy response-service \
     --memory 512Mi \
     --cpu 1 \
     --port 8080 \
-    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID,PORT=8080" \
+    --set-env-vars "REDIS_HOST=$VM_IP,REDIS_PORT=6379,GCP_PROJECT_ID=$PROJECT_ID" \
     --project $PROJECT_ID
 
 # Telegram Bot (using webhook mode for better resource usage)
@@ -92,7 +92,7 @@ gcloud run deploy telegram-bot \
     --memory 512Mi \
     --cpu 1 \
     --port 8080 \
-    --set-env-vars "API_GATEWAY_URL=$API_GATEWAY_URL,GCP_PROJECT_ID=$PROJECT_ID,TELEGRAM_WEBHOOK_MODE=true,PORT=8080" \
+    --set-env-vars "API_GATEWAY_URL=$API_GATEWAY_URL,GCP_PROJECT_ID=$PROJECT_ID,TELEGRAM_WEBHOOK_MODE=true" \
     --project $PROJECT_ID
 
 # Get service URLs to update API Gateway configuration
