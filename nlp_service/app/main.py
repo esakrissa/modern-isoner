@@ -7,6 +7,8 @@ import openai
 from google.cloud import pubsub_v1
 from concurrent.futures import TimeoutError
 import threading
+import hashlib
+import time
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -19,14 +21,40 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+REDIS_CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", "3600"))  # Default 1 hour
 
-redis_client = redis.Redis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    db=REDIS_DB,
-    password=REDIS_PASSWORD,
-    decode_responses=True
-)
+# Redis connection with retries
+def get_redis_connection(max_retries=5, retry_delay=2):
+    retries = 0
+    while retries < max_retries:
+        try:
+            client = redis.Redis(
+                host=REDIS_HOST,
+                port=REDIS_PORT,
+                db=REDIS_DB,
+                password=REDIS_PASSWORD,
+                decode_responses=True,
+                socket_timeout=5,
+                socket_connect_timeout=5
+            )
+            # Test connection
+            client.ping()
+            logger.info(f"Successfully connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+            return client
+        except redis.ConnectionError as e:
+            retries += 1
+            logger.warning(f"Redis connection attempt {retries} failed: {e}")
+            if retries < max_retries:
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"Failed to connect to Redis after {max_retries} attempts")
+                # Return None or raise an exception based on your preference
+                return None
+
+# Initialize Redis with retry logic
+redis_client = get_redis_connection()
+if not redis_client:
+    logger.warning("Running without Redis cache - performance may be affected")
 
 # OpenAI setup
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -50,18 +78,70 @@ subscription_path = subscriber.subscription_path(PROJECT_ID, INCOMING_MESSAGES_S
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    # Check Redis connection
+    redis_status = "connected" if redis_client and redis_client.ping() else "disconnected"
+    return {
+        "status": "healthy",
+        "redis_status": redis_status,
+        "openai_api": "configured"
+    }
+
+def create_cache_key(message_content, user_id=None):
+    """Create deterministic cache key from message content"""
+    # Add user ID to make cache keys user-specific if needed
+    content_to_hash = message_content
+    if user_id:
+        content_to_hash = f"{user_id}:{message_content}"
+    
+    # Create a deterministic hash for the content
+    hash_obj = hashlib.md5(content_to_hash.encode('utf-8'))
+    return f"nlp:response:{hash_obj.hexdigest()}"
+
+def get_from_cache(key):
+    """Try to get data from Redis cache with error handling"""
+    if not redis_client:
+        return None
+    
+    try:
+        cached_data = redis_client.get(key)
+        if cached_data:
+            return json.loads(cached_data)
+    except (redis.RedisError, json.JSONDecodeError) as e:
+        logger.warning(f"Error retrieving from cache: {e}")
+    
+    return None
+
+def save_to_cache(key, data, ttl=REDIS_CACHE_TTL):
+    """Save data to Redis cache with error handling"""
+    if not redis_client:
+        return False
+    
+    try:
+        redis_client.setex(
+            key,
+            ttl,
+            json.dumps(data)
+        )
+        return True
+    except (redis.RedisError, TypeError) as e:
+        logger.warning(f"Error saving to cache: {e}")
+        return False
 
 def process_message(message_data):
-    """Process a message using OpenAI API"""
+    """Process a message using OpenAI API with enhanced caching"""
     try:
-        # Check cache
-        cache_key = f"nlp:{message_data['content']}"
-        cached_result = redis_client.get(cache_key)
+        # Generate cache key
+        cache_key = create_cache_key(
+            message_data['content'], 
+            message_data.get('user_id')
+        )
+        
+        # Try to get from cache
+        cached_result = get_from_cache(cache_key)
         
         if cached_result:
             logger.info(f"Cache hit for message {message_data['message_id']}")
-            result = json.loads(cached_result)
+            result = cached_result
         else:
             logger.info(f"Processing message {message_data['message_id']} with OpenAI")
             
@@ -96,15 +176,16 @@ def process_message(message_data):
             result = {
                 'intent': intent,
                 'entities': entities,
-                'response': content
+                'response': content,
+                'model': 'gpt-3.5-turbo',
+                'cached': False,
+                'timestamp': time.time()
             }
             
             # Cache result
-            redis_client.setex(
-                cache_key,
-                3600,  # 1 hour
-                json.dumps(result)
-            )
+            cache_saved = save_to_cache(cache_key, result)
+            if cache_saved:
+                logger.info(f"Cached result for message {message_data['message_id']}")
         
         # Publish processed message
         processed_message = {
