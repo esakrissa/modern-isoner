@@ -22,12 +22,21 @@ echo "3. Deploy remaining services to Cloud Run"
 echo ""
 read -p "Press Enter to continue or Ctrl+C to cancel..."
 
+# Function to check if a firewall rule exists
+firewall_rule_exists() {
+    local rule_name=$1
+    if gcloud compute firewall-rules describe $rule_name --project=$PROJECT_ID &>/dev/null; then
+        return 0  # Rule exists
+    else
+        return 1  # Rule doesn't exist
+    fi
+}
+
 # Step 1: Create Pub/Sub topics
 echo "Step 1: Creating Pub/Sub topics and subscriptions..."
 bash "$SCRIPT_DIR/create_topics.sh" $PROJECT_ID
 if [ $? -ne 0 ]; then
-    echo "Failed to create Pub/Sub topics. Please check the error and try again."
-    exit 1
+    echo "Warning: Some issues occurred during Pub/Sub setup, but continuing with deployment."
 fi
 
 # Step 2: Set up VM instance
@@ -44,8 +53,10 @@ REQUIRED_RULES=("modern-isoner-allow-http" "modern-isoner-allow-https" "modern-i
 MISSING_RULES=()
 
 for RULE in "${REQUIRED_RULES[@]}"; do
-    if ! gcloud compute firewall-rules describe $RULE --project=$PROJECT_ID &>/dev/null; then
+    if ! firewall_rule_exists "$RULE"; then
         MISSING_RULES+=($RULE)
+    else
+        echo "✅ Firewall rule '$RULE' is in place."
     fi
 done
 
@@ -58,49 +69,54 @@ if [ ${#MISSING_RULES[@]} -gt 0 ]; then
     
     # Create missing HTTP rule if needed
     if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-http " ]]; then
+        echo "Creating firewall rule 'modern-isoner-allow-http'..."
         gcloud compute firewall-rules create modern-isoner-allow-http \
             --project=$PROJECT_ID \
             --allow=tcp:80,tcp:8000 \
             --target-tags=http-server \
-            --description="Allow HTTP traffic" || true
+            --description="Allow HTTP traffic"
     fi
     
     # Create missing HTTPS rule if needed
     if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-https " ]]; then
+        echo "Creating firewall rule 'modern-isoner-allow-https'..."
         gcloud compute firewall-rules create modern-isoner-allow-https \
             --project=$PROJECT_ID \
             --allow=tcp:443 \
             --target-tags=https-server \
-            --description="Allow HTTPS traffic" || true
+            --description="Allow HTTPS traffic"
     fi
     
     # Create missing Redis rule if needed
     if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-redis " ]]; then
+        echo "Creating firewall rule 'modern-isoner-allow-redis'..."
         gcloud compute firewall-rules create modern-isoner-allow-redis \
             --project=$PROJECT_ID \
             --allow=tcp:6379 \
             --target-tags=http-server \
             --description="Allow Redis traffic" \
-            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" || true
+            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
     fi
     
     # Create missing SSH rule if needed
     if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-ssh " ]]; then
+        echo "Creating firewall rule 'modern-isoner-allow-ssh'..."
         gcloud compute firewall-rules create modern-isoner-allow-ssh \
             --project=$PROJECT_ID \
             --allow=tcp:22 \
             --target-tags=http-server,https-server \
-            --description="Allow SSH access to VM instance" || true
+            --description="Allow SSH access to VM instance"
     fi
     
     # Create missing internal rule if needed
     if [[ " ${MISSING_RULES[*]} " =~ " modern-isoner-allow-internal " ]]; then
+        echo "Creating firewall rule 'modern-isoner-allow-internal'..."
         gcloud compute firewall-rules create modern-isoner-allow-internal \
             --project=$PROJECT_ID \
             --allow=tcp:1-65535,udp:1-65535,icmp \
             --target-tags=http-server,https-server \
             --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
-            --description="Allow internal communication between services" || true
+            --description="Allow internal communication between services"
     fi
 else
     echo "✅ All required firewall rules are in place."

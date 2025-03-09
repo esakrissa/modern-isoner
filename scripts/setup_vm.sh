@@ -16,8 +16,20 @@ INSTANCE_TYPE="e2-micro"  # Using e2-micro type for free tier, but naming as VM 
 
 echo "Setting up VM instance for Modern ISONER services in project: $PROJECT_ID"
 
+# Function to check if a firewall rule exists
+firewall_rule_exists() {
+    local rule_name=$1
+    if gcloud compute firewall-rules describe $rule_name --project=$PROJECT_ID &>/dev/null; then
+        return 0  # Rule exists
+    else
+        return 1  # Rule doesn't exist
+    fi
+}
+
 # Create the VM instance if it doesn't exist
-if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID &>/dev/null; then
+if gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PROJECT_ID &>/dev/null; then
+    echo "✅ Instance $INSTANCE_NAME already exists, skipping creation."
+else
     echo "Creating VM instance: $INSTANCE_NAME with Ubuntu 24.04 LTS (Noble)"
     gcloud compute instances create $INSTANCE_NAME \
         --project=$PROJECT_ID \
@@ -30,42 +42,65 @@ if ! gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --project=$PR
         --tags=http-server,https-server
     
     # Add firewall rules to allow HTTP/HTTPS traffic
-    gcloud compute firewall-rules create modern-isoner-allow-http \
-        --project=$PROJECT_ID \
-        --allow=tcp:80,tcp:8000 \
-        --target-tags=http-server \
-        --description="Allow HTTP traffic" || true  # Continue if rule exists
+    if firewall_rule_exists "modern-isoner-allow-http"; then
+        echo "✅ Firewall rule 'modern-isoner-allow-http' already exists."
+    else
+        echo "Creating firewall rule 'modern-isoner-allow-http'..."
+        gcloud compute firewall-rules create modern-isoner-allow-http \
+            --project=$PROJECT_ID \
+            --allow=tcp:80,tcp:8000 \
+            --target-tags=http-server \
+            --description="Allow HTTP traffic"
+    fi
     
-    gcloud compute firewall-rules create modern-isoner-allow-https \
-        --project=$PROJECT_ID \
-        --allow=tcp:443 \
-        --target-tags=https-server \
-        --description="Allow HTTPS traffic" || true  # Continue if rule exists
+    if firewall_rule_exists "modern-isoner-allow-https"; then
+        echo "✅ Firewall rule 'modern-isoner-allow-https' already exists."
+    else
+        echo "Creating firewall rule 'modern-isoner-allow-https'..."
+        gcloud compute firewall-rules create modern-isoner-allow-https \
+            --project=$PROJECT_ID \
+            --allow=tcp:443 \
+            --target-tags=https-server \
+            --description="Allow HTTPS traffic"
+    fi
     
     # Allow Redis port for internal access
-    gcloud compute firewall-rules create modern-isoner-allow-redis \
-        --project=$PROJECT_ID \
-        --allow=tcp:6379 \
-        --target-tags=http-server \
-        --description="Allow Redis traffic" \
-        --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" || true  # Continue if rule exists
+    if firewall_rule_exists "modern-isoner-allow-redis"; then
+        echo "✅ Firewall rule 'modern-isoner-allow-redis' already exists."
+    else
+        echo "Creating firewall rule 'modern-isoner-allow-redis'..."
+        gcloud compute firewall-rules create modern-isoner-allow-redis \
+            --project=$PROJECT_ID \
+            --allow=tcp:6379 \
+            --target-tags=http-server \
+            --description="Allow Redis traffic" \
+            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    fi
     
     # Ensure SSH access is allowed (essential)
-    gcloud compute firewall-rules create modern-isoner-allow-ssh \
-        --project=$PROJECT_ID \
-        --allow=tcp:22 \
-        --target-tags=http-server,https-server \
-        --description="Allow SSH access to VM instance" || true  # Continue if rule exists
+    if firewall_rule_exists "modern-isoner-allow-ssh"; then
+        echo "✅ Firewall rule 'modern-isoner-allow-ssh' already exists."
+    else
+        echo "Creating firewall rule 'modern-isoner-allow-ssh'..."
+        gcloud compute firewall-rules create modern-isoner-allow-ssh \
+            --project=$PROJECT_ID \
+            --allow=tcp:22 \
+            --target-tags=http-server,https-server \
+            --description="Allow SSH access to VM instance"
+    fi
     
     # Allow internal communication between services
-    gcloud compute firewall-rules create modern-isoner-allow-internal \
-        --project=$PROJECT_ID \
-        --allow=tcp:1-65535,udp:1-65535,icmp \
-        --target-tags=http-server,https-server \
-        --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
-        --description="Allow internal communication between services" || true  # Continue if rule exists
-else
-    echo "Instance $INSTANCE_NAME already exists, skipping creation."
+    if firewall_rule_exists "modern-isoner-allow-internal"; then
+        echo "✅ Firewall rule 'modern-isoner-allow-internal' already exists."
+    else
+        echo "Creating firewall rule 'modern-isoner-allow-internal'..."
+        gcloud compute firewall-rules create modern-isoner-allow-internal \
+            --project=$PROJECT_ID \
+            --allow=tcp:1-65535,udp:1-65535,icmp \
+            --target-tags=http-server,https-server \
+            --source-ranges="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" \
+            --description="Allow internal communication between services"
+    fi
 fi
 
 # Wait for instance to be ready (important for newly created instances)
