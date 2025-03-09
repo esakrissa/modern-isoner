@@ -308,13 +308,8 @@ modern-isoner/
 ├── middleware/          # Shared middleware components
 ├── routes/              # API route definitions
 ├── docs/                # Documentation files and assets
-│   └── assets/          # Images and diagrams for documentation
 ├── sql/                 # Database setup and migration scripts
 ├── scripts/             # Deployment and utility scripts
-│   ├── deploy_all.sh    # Main deployment script for entire system
-│   ├── setup_vm.sh      # VM instance setup with Ubuntu 24.04 LTS
-│   ├── deploy_cloud_run.sh # Deploys services to Cloud Run
-│   └── create_topics.sh # Creates Pub/Sub topics and subscriptions
 ├── .github/workflows/   # CI/CD pipelines
 ├── docker-compose.yml   # Local development container orchestration
 └── .env.example         # Example environment variables template
