@@ -1,18 +1,38 @@
-version: '3'
-
 services:
+  redis:
+    image: redis:alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./redis/data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: '0.3'
+
   api-gateway:
     build: ./api_gateway
     ports:
       - "8000:8000"
     environment:
       - AUTH_SERVICE_URL=http://auth-service:8001
-      - MESSAGE_SERVICE_URL=http://message-service:8002
-      - EXTERNAL_DATA_SERVICE_URL=http://external-data-service:8004
+      - MESSAGE_SERVICE_URL=${MESSAGE_SERVICE_URL}
+      - EXTERNAL_DATA_SERVICE_URL=${EXTERNAL_DATA_SERVICE_URL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
+      - redis
       - auth-service
-      - message-service
-      - external-data-service
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: '0.3'
 
   auth-service:
     build: ./auth_service
@@ -21,82 +41,13 @@ services:
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
-
-  message-service:
-    build: ./message_service
-    ports:
-      - "8002:8002"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - PUBSUB_INCOMING_MESSAGES_TOPIC=incoming-messages
-      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
-    volumes:
-      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
-
-  nlp-service:
-    build: ./nlp_service
-    ports:
-      - "8003:8003"
-    environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - PUBSUB_INCOMING_MESSAGES_TOPIC=incoming-messages
-      - PUBSUB_INCOMING_MESSAGES_SUBSCRIPTION=incoming-messages-nlp-sub
-      - PUBSUB_PROCESSED_MESSAGES_TOPIC=processed-messages
-      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
-    volumes:
-      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
     depends_on:
       - redis
-
-  external-data-service:
-    build: ./external_data_service
-    ports:
-      - "8004:8004"
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
-    depends_on:
-      - redis
-
-  response-service:
-    build: ./response_service
-    ports:
-      - "8005:8005"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - PUBSUB_PROCESSED_MESSAGES_TOPIC=processed-messages
-      - PUBSUB_PROCESSED_MESSAGES_SUBSCRIPTION=processed-messages-response-sub
-      - PUBSUB_OUTGOING_MESSAGES_TOPIC=outgoing-messages
-      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
-    volumes:
-      - ${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/credentials.json
-    depends_on:
-      - redis
-
-  telegram-bot:
-    build: ./telegram_bot
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - API_GATEWAY_URL=http://api-gateway:8000
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - PUBSUB_OUTGOING_MESSAGES_TOPIC=outgoing-messages
-      - PUBSUB_OUTGOING_MESSAGES_SUBSCRIPTION=outgoing-messages-telegram-sub
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
-    volumes:
-      - ${GOOGLE_APPLICATION_CREDENTIALS}:/app/credentials.json
-    depends_on:
-      - api-gateway
-      - response-service
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: '0.3' 

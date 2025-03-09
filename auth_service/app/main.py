@@ -5,6 +5,10 @@ import os
 from typing import Optional, List
 import logging
 import jwt
+import uuid
+from datetime import datetime
+import redis
+import json
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +26,25 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Redis setup for caching
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+
+# Initialize Redis client
+redis_client = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    db=REDIS_DB,
+    password=REDIS_PASSWORD,
+    decode_responses=True
+)
+
+# Cache TTL settings (in seconds)
+USER_CACHE_TTL = 300  # 5 minutes
+TOKEN_CACHE_TTL = 3600  # 1 hour
 
 class UserRegister(BaseModel):
     email: str
@@ -48,6 +71,50 @@ async def get_user_id_from_header(x_user_id: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="X-User-ID header missing")
     return x_user_id
 
+# Helper function to cache user data
+def cache_user_data(user_id: str, user_data: dict) -> None:
+    """Cache user data for faster access"""
+    try:
+        redis_client.setex(f"user:{user_id}", USER_CACHE_TTL, json.dumps(user_data))
+        logger.info(f"Cached user data for user_id: {user_id}")
+    except Exception as e:
+        logger.error(f"Error caching user data: {e}")
+
+# Helper function to get cached user data
+def get_cached_user(user_id: str) -> Optional[dict]:
+    """Get cached user data if available"""
+    try:
+        cached = redis_client.get(f"user:{user_id}")
+        if cached:
+            logger.info(f"Cache hit for user_id: {user_id}")
+            return json.loads(cached)
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving cached user data: {e}")
+        return None
+
+# Helper function to cache token validation
+def cache_token_validation(token: str, user_id: str) -> None:
+    """Cache token validation result"""
+    try:
+        redis_client.setex(f"token:{token}", TOKEN_CACHE_TTL, user_id)
+        logger.info(f"Cached token validation for user_id: {user_id}")
+    except Exception as e:
+        logger.error(f"Error caching token validation: {e}")
+
+# Helper function to get cached token validation
+def get_cached_token_validation(token: str) -> Optional[str]:
+    """Get cached token validation if available"""
+    try:
+        cached = redis_client.get(f"token:{token}")
+        if cached:
+            logger.info(f"Cache hit for token validation")
+            return cached
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving cached token validation: {e}")
+        return None
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
@@ -70,6 +137,9 @@ async def register(user: UserRegister):
         }
         
         supabase.table("users").insert(user_data).execute()
+        
+        # Cache user data
+        cache_user_data(auth_response.user.id, user_data)
         
         # Assign default 'user' role
         default_role = supabase.from_("roles").select("id").eq("name", "user").execute()
@@ -96,6 +166,14 @@ async def login(user: UserLogin):
             "password": user.password
         })
         
+        # Cache user data and token validation
+        user_data = {
+            "id": auth_response.user.id,
+            "email": auth_response.user.email
+        }
+        cache_user_data(auth_response.user.id, user_data)
+        cache_token_validation(auth_response.session.access_token, auth_response.user.id)
+        
         return {
             "message": "Login successful",
             "access_token": auth_response.session.access_token,
@@ -110,8 +188,17 @@ async def login(user: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/logout")
-async def logout():
+async def logout(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    
     try:
+        token = authorization.replace("Bearer ", "")
+        
+        # Invalidate token in cache
+        redis_client.delete(f"token:{token}")
+        
+        # Sign out from Supabase
         supabase.auth.sign_out()
         return {"message": "Logout successful"}
     except Exception as e:
@@ -223,6 +310,59 @@ async def get_current_user(request: Request, user_id: str = Depends(get_user_id_
     except Exception as e:
         logger.error(f"Error fetching current user: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/validate-token")
+async def validate_token(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    # Check if token validation is cached
+    cached_user_id = get_cached_token_validation(token)
+    if cached_user_id:
+        # Get cached user data
+        cached_user = get_cached_user(cached_user_id)
+        if cached_user:
+            return {
+                "valid": True,
+                "user_id": cached_user_id,
+                "user": cached_user
+            }
+    
+    # If not cached or cache miss, verify with Supabase
+    try:
+        # Verify token with Supabase
+        user = supabase.auth.get_user(token)
+        
+        # Cache validation result
+        cache_token_validation(token, user.user.id)
+        
+        # Get or fetch user data
+        cached_user = get_cached_user(user.user.id)
+        if not cached_user:
+            # Fetch from database and cache
+            response = supabase.table("users").select("*").eq("id", user.user.id).execute()
+            if response.data:
+                user_data = response.data[0]
+                cache_user_data(user.user.id, user_data)
+            else:
+                user_data = {
+                    "id": user.user.id,
+                    "email": user.user.email
+                }
+                cache_user_data(user.user.id, user_data)
+        else:
+            user_data = cached_user
+        
+        return {
+            "valid": True,
+            "user_id": user.user.id,
+            "user": user_data
+        }
+    except Exception as e:
+        logger.error(f"Error validating token: {e}")
+        return {"valid": False, "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
